@@ -52,3 +52,13 @@ exports.logout = asyncHandler(async (req, res) => {
   await authService.logout(req.user.id);
   res.json({ message: 'Đã đăng xuất' });
 });
+
+exports.forgotPassword = asyncHandler(async (req, res) => {
+  const result = await authService.forgotPassword(req.body);
+  res.json(result);
+});
+
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const result = await authService.resetPassword(req.body);
+  res.json(result);
+});

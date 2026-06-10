@@ -125,4 +125,13 @@ class AuthNotifier extends _$AuthNotifier {
     await ref.read(tokenStorageProvider).clear();
     state = const AsyncData(null);
   }
+
+  Future<String> forgotPassword(String email) async {
+    return ref.read(authServiceProvider).forgotPassword(email);
+  }
+
+  Future<String> resetPassword(
+      String email, String otp, String newPassword) async {
+    return ref.read(authServiceProvider).resetPassword(email, otp, newPassword);
+  }
 }

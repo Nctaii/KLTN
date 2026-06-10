@@ -96,6 +96,25 @@ class AuthService {
       refresh: data['refresh_token'] as String,
     );
   }
+
+  // Gửi yêu cầu quên mật khẩu (server gửi OTP reset qua email)
+  Future<String> forgotPassword(String email) async {
+    final res = await _dio.post('/auth/forgot-password', data: {'email': email});
+    final data = _ok(res);
+    return (data['message'] ?? 'Đã gửi mã') as String;
+  }
+
+  // Đặt lại mật khẩu bằng OTP
+  Future<String> resetPassword(
+      String email, String otp, String newPassword) async {
+    final res = await _dio.post('/auth/reset-password', data: {
+      'email': email,
+      'otp': otp,
+      'newPassword': newPassword,
+    });
+    final data = _ok(res);
+    return (data['message'] ?? 'Thành công') as String;
+  }
 }
 
 

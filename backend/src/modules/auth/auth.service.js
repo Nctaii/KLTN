@@ -37,21 +37,20 @@ async function issueTokens(user) {
 }
 
 // Sinh OTP 6 số, lưu hash vào DB, gửi mail
-async function createAndSendOtp(userId, email) {
+async function createAndSendOtp(userId, email, purpose = 'verify_email') {
   const otp = ('' + crypto.randomInt(0, 1000000)).padStart(6, '0');
   const otpHash = await bcrypt.hash(otp, 10);
   const ttl = parseInt(process.env.OTP_TTL_MINUTES || '10', 10);
 
-  // Vô hiệu các OTP cũ chưa dùng của user này, rồi tạo mã mới
   await query(
     `UPDATE email_otps SET consumed = TRUE
-     WHERE user_id = $1 AND purpose = 'verify_email' AND consumed = FALSE`,
-    [userId]
+     WHERE user_id = $1 AND purpose = $2 AND consumed = FALSE`,
+    [userId, purpose]
   );
   await query(
     `INSERT INTO email_otps (user_id, otp_hash, purpose, expires_at)
-     VALUES ($1, $2, 'verify_email', now() + ($3 || ' minutes')::interval)`,
-    [userId, otpHash, ttl]
+     VALUES ($1, $2, $3, now() + ($4 || ' minutes')::interval)`,
+    [userId, otpHash, purpose, ttl]
   );
   await mailService.sendOtpEmail(email, otp);
 }
@@ -257,6 +256,60 @@ async function logout(userId) {
   ]);
 }
 
+// Quên mật khẩu: gửi OTP reset tới email (nếu tài khoản tồn tại & đã xác minh)
+async function forgotPassword({ email }) {
+  if (!email) throw new ApiError(400, 'Thiếu email');
+  const { rows } = await query(
+    `SELECT id, is_verified FROM users WHERE email = $1`,
+    [email]
+  );
+  const user = rows[0];
+  // Vì bảo mật, không tiết lộ email có tồn tại hay không
+  if (user && user.is_verified) {
+    await createAndSendOtp(user.id, email, 'reset_password');
+  }
+  return { message: 'Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi.' };
+}
+
+// Đặt lại mật khẩu: kiểm tra OTP reset đúng -> đổi mật khẩu
+async function resetPassword({ email, otp, newPassword }) {
+  if (!email || !otp || !newPassword) {
+    throw new ApiError(400, 'Thiếu email, mã OTP hoặc mật khẩu mới');
+  }
+  if (newPassword.length < 6) {
+    throw new ApiError(400, 'Mật khẩu phải từ 6 ký tự trở lên');
+  }
+  const { rows: urows } = await query(`SELECT id FROM users WHERE email = $1`, [email]);
+  const user = urows[0];
+  if (!user) throw new ApiError(400, 'Mã không hợp lệ hoặc đã hết hạn');
+
+  const { rows: orows } = await query(
+    `SELECT * FROM email_otps
+     WHERE user_id = $1 AND purpose = 'reset_password' AND consumed = FALSE
+       AND expires_at > now()
+     ORDER BY created_at DESC LIMIT 1`,
+    [user.id]
+  );
+  const record = orows[0];
+  if (!record) {
+    throw new ApiError(400, 'Mã đặt lại đã hết hạn. Vui lòng yêu cầu mã mới.');
+  }
+  if (record.attempts >= MAX_OTP_ATTEMPTS) {
+    throw new ApiError(429, 'Nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.');
+  }
+  const ok = await bcrypt.compare(otp, record.otp_hash);
+  if (!ok) {
+    await query(`UPDATE email_otps SET attempts = attempts + 1 WHERE id = $1`, [record.id]);
+    throw new ApiError(400, 'Mã đặt lại không đúng');
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [passwordHash, user.id]);
+  await query(`UPDATE email_otps SET consumed = TRUE WHERE id = $1`, [record.id]);
+  await query(`UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = $1`, [user.id]);
+  return { message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.' };
+}
+
 module.exports = {
   register,
   verifyEmail,
@@ -265,4 +318,6 @@ module.exports = {
   refresh,
   getMe,
   logout,
+  forgotPassword,
+  resetPassword,
 };

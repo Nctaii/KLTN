@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:interactive_novel/features/auth/screens/forgot_password_screen.dart';
 import '../data/auth_service.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
@@ -153,6 +154,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ));
             },
             child: const Text('Chưa có tài khoản? Đăng ký'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ForgotPasswordScreen(),
+              ));
+            },
+            child: const Text('Quên mật khẩu?'),
           ),
         ],
       ),
