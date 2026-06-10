@@ -1,0 +1,332 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/scenario.dart';
+import '../providers/scenario_provider.dart';
+
+class CreateScenarioScreen extends ConsumerStatefulWidget {
+  const CreateScenarioScreen({super.key});
+  @override
+  ConsumerState<CreateScenarioScreen> createState() =>
+      _CreateScenarioScreenState();
+}
+
+class _CreateScenarioScreenState
+    extends ConsumerState<CreateScenarioScreen> {
+  // Các controller cho trường nhập
+  final _title = TextEditingController();
+  final _desc = TextEditingController();
+  final _worldSetting = TextEditingController();
+  final _protagonist = TextEditingController();
+  final _mcName = TextEditingController();
+  final _enemy = TextEditingController();
+  final _goal = TextEditingController();
+  final _cultivationNote = TextEditingController();
+
+  // Thể loại đang chọn (1 = Tiên hiệp, 2 = Fantasy)
+    int _genre = 1;
+
+  // Danh sách nhân vật quan trọng (động)
+  final List<({TextEditingController name, TextEditingController role})>
+      _characters = [];
+
+  // Danh sách cảnh giới (động, chỉ dùng cho tiên hiệp)
+  final List<TextEditingController> _realms = [];
+
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    for (final c in [
+      _title, _desc, _worldSetting, _protagonist,
+      _mcName, _enemy, _goal, _cultivationNote
+    ]) {
+      c.dispose();
+    }
+    for (final c in _characters) {
+      c.name.dispose();
+      c.role.dispose();
+    }
+    for (final c in _realms) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _addCharacter() {
+    setState(() {
+      _characters.add((
+        name: TextEditingController(),
+        role: TextEditingController(),
+      ));
+    });
+  }
+
+  void _addRealm() {
+    setState(() => _realms.add(TextEditingController()));
+  }
+
+  bool get _isXianxia => _genre == 1;
+
+  Future<void> _submit() async {
+    if (_title.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập tên scenario')),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+
+    final input = ScenarioInput(
+      title: _title.text.trim(),
+      description: _desc.text.trim(),
+      genreIds: [_genre],
+      worldSetting: _worldSetting.text.trim(),
+      protagonistRole: _protagonist.text.trim(),
+      defaultMcName: _mcName.text.trim(),
+      enemyDescription: _enemy.text.trim(),
+      finalGoal: _goal.text.trim(),
+      keyCharacters: _characters
+          .where((c) => c.name.text.trim().isNotEmpty)
+          .map((c) => KeyCharacter(
+                name: c.name.text.trim(),
+                role: c.role.text.trim(),
+              ))
+          .toList(),
+      cultivationNote: _isXianxia ? _cultivationNote.text.trim() : '',
+      realms: _isXianxia
+          ? _realms
+              .where((r) => r.text.trim().isNotEmpty)
+              .toList()
+              .asMap()
+              .entries
+              .map((e) => Realm(name: e.value.text.trim(), tier: e.key + 1))
+              .toList()
+          : [],
+    );
+
+    try {
+      await ref.read(scenarioServiceProvider).create(input);
+      await ref.read(scenarioListProvider.notifier).refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã tạo scenario thành công')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Tạo thất bại: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Tạo scenario mới')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _label('Thông tin chung'),
+          TextField(
+            controller: _title,
+            decoration: const InputDecoration(labelText: 'Tên scenario *'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _desc,
+            decoration: const InputDecoration(labelText: 'Mô tả ngắn'),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 20),
+
+          _label('Thể loại'),
+          Wrap(
+            spacing: 8,
+            children: [
+              Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Tiên hiệp'),
+                selected: _genre == 1,
+                onSelected: (_) => setState(() => _genre = 1),
+              ),
+              ChoiceChip(
+                label: const Text('Fantasy'),
+                selected: _genre == 2,
+                onSelected: (_) => setState(() => _genre = 2),
+              ),
+            ],
+          ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          _label('Cấu hình thế giới'),
+          TextField(
+            controller: _worldSetting,
+            decoration: const InputDecoration(labelText: 'Bối cảnh thế giới'),
+            maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _protagonist,
+            decoration:
+                const InputDecoration(labelText: 'Thân phận nhân vật chính'),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _mcName,
+            decoration: const InputDecoration(
+              labelText: 'Tên mặc định nhân vật chính (tùy chọn)',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _enemy,
+            decoration: const InputDecoration(labelText: 'Kẻ thù'),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _goal,
+            decoration:
+                const InputDecoration(labelText: 'Mục đích cuối cùng'),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 20),
+
+          // Nhân vật quan trọng (động)
+          Row(
+            children: [
+              _label('Nhân vật quan trọng'),
+              const Spacer(),
+              IconButton.filled(
+                onPressed: _addCharacter,
+                icon: const Icon(Icons.add),
+                tooltip: 'Thêm nhân vật',
+              ),
+            ],
+          ),
+          ..._characters.asMap().entries.map((e) {
+            final i = e.key;
+            final c = e.value;
+            return Card(
+              color: theme.colorScheme.surface,
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Nhân vật ${i + 1}'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => setState(() {
+                            c.name.dispose();
+                            c.role.dispose();
+                            _characters.removeAt(i);
+                          }),
+                        ),
+                      ],
+                    ),
+                    TextField(
+                      controller: c.name,
+                      decoration: const InputDecoration(labelText: 'Tên'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: c.role,
+                      decoration: const InputDecoration(
+                        labelText: 'Thân phận (vd: sư phụ, phản diện)',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 20),
+
+          // Phần tiên hiệp: chỉ hiện khi chọn thể loại Tiên hiệp
+          if (_isXianxia) ...[
+            _label('Hệ thống tu luyện (Tiên hiệp)'),
+            TextField(
+              controller: _cultivationNote,
+              decoration: const InputDecoration(
+                labelText: 'Mô tả hệ thống tu luyện',
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Expanded(child: Text('Các cảnh giới (từ thấp đến cao)')),
+                IconButton.filled(
+                  onPressed: _addRealm,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Thêm cảnh giới',
+                ),
+              ],
+            ),
+            ..._realms.asMap().entries.map((e) {
+              final i = e.key;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: e.value,
+                        decoration: InputDecoration(
+                          labelText: 'Cảnh giới ${i + 1}',
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => setState(() {
+                        e.value.dispose();
+                        _realms.removeAt(i);
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 20),
+          ],
+
+          SizedBox(
+            height: 50,
+            child: _submitting
+                ? const Center(child: CircularProgressIndicator())
+                : ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text('Tạo scenario'),
+                  ),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Text(
+          text,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+      );
+}
