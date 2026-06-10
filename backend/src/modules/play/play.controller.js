@@ -29,3 +29,9 @@ exports.listMine = asyncHandler(async (req, res) => {
   const sessions = await svc.listMySessions(req.user.id);
   res.json({ sessions });
 });
+
+// DELETE /play/by-story/:storyId  -> xóa các lượt chơi của user cho scenario này
+exports.deleteByStory = asyncHandler(async (req, res) => {
+  await svc.deleteSessionsByStory(req.user.id, req.params.storyId);
+  res.json({ message: 'Đã xóa lượt chơi cũ' });
+});

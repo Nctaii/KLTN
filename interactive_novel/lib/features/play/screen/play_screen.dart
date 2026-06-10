@@ -166,8 +166,79 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.storyTitle),
+        actions: [
+          // Chỉ hiện nút mục lục khi đã có chương
+          if (_chapters.isNotEmpty)
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.list),
+                tooltip: 'Mục lục',
+                onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+              ),
+            ),
+        ],
       ),
+      endDrawer: _buildChapterDrawer(theme),
       body: _buildBody(theme),
+    );
+  }
+
+  // Drawer mục lục: liệt kê các chương, bấm để nhảy tới
+  Widget _buildChapterDrawer(ThemeData theme) {
+    return Drawer(
+      backgroundColor: theme.colorScheme.surface,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Mục lục',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _chapters.length,
+                itemBuilder: (context, i) {
+                  final ch = _chapters[i];
+                  // Trích đoạn đầu nội dung (bỏ xuống dòng cho gọn)
+                  final preview = ch.content
+                      .replaceAll('\n', ' ')
+                      .trim();
+                  final snippet = preview.length > 60
+                      ? '${preview.substring(0, 60)}...'
+                      : preview;
+                  return ListTile(
+                    title: Text(
+                      'Chương ${ch.chapterNumber}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      snippet,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () {
+                      Navigator.pop(context); // đóng drawer
+                      _pageController.jumpToPage(i); // nhảy tới chương
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

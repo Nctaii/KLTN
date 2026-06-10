@@ -61,4 +61,10 @@ class PlayService {
         .map((e) => Chapter.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  // Xóa các lượt chơi của scenario này
+  Future<void> deleteByStory(String storyId) async {
+    final res = await _dio.delete('/play/by-story/$storyId');
+    _ok(res);
+  }
 }

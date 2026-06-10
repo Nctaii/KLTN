@@ -93,7 +93,12 @@ options là 2-4 hướng đi ngắn gọn cho chương kế tiếp.`;
       : 'Viết Chương 1 mở đầu.',
   });
 
-  const maxTokens = Math.round(CHAPTER_WORDS * 1.8) + 300;
+  // Mồi assistant bắt đầu bằng '{' để Claude trả thẳng JSON, không bọc ```json
+  messages.push({ role: 'assistant', content: '{' });
+
+  // TỐI ƯU TOKEN #4: max_tokens đủ dư để JSON không bị cắt.
+  // Tiếng Việt ~2 token/từ; cộng đệm cho phần options + cấu trúc JSON.
+  const maxTokens = Math.round(CHAPTER_WORDS * 2.5) + 600;
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
@@ -103,7 +108,9 @@ options là 2-4 hướng đi ngắn gọn cho chương kế tiếp.`;
   });
 
   const raw = response.content.find((b) => b.type === 'text')?.text || '';
-  const parsed = safeParseJson(raw);
+  // Đã mồi assistant bằng '{' nên response thiếu dấu mở đầu -> ghép lại
+  const fullJson = raw.trim().startsWith('{') ? raw : '{' + raw;
+  const parsed = safeParseJson(fullJson);
   const tokenUsed =
     (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
 
@@ -114,23 +121,56 @@ options là 2-4 hướng đi ngắn gọn cho chương kế tiếp.`;
   };
 }
 
+// Claude đôi khi bọc JSON trong ```json ... ``` hoặc trả JSON bị cắt.
+// Hàm này cố parse; nếu hỏng thì bóc riêng content/options để không hiện JSON thô.
 function safeParseJson(text) {
   let t = text.trim();
+
   const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) t = fence[1].trim();
+
   try {
-    return JSON.parse(t);
+    const obj = JSON.parse(t);
+    return { content: obj.content || '', options: obj.options || [] };
   } catch {
-    const brace = t.match(/\{[\s\S]*\}/);
-    if (brace) {
-      try {
-        return JSON.parse(brace[0]);
-      } catch {
-        /* rơi xuống */
-      }
-    }
-    return { content: t, options: [] };
+    /* tiếp tục bóc thủ công */
   }
+
+  const brace = t.match(/\{[\s\S]*\}/);
+  if (brace) {
+    try {
+      const obj = JSON.parse(brace[0]);
+      return { content: obj.content || '', options: obj.options || [] };
+    } catch {
+      /* rơi xuống bóc regex */
+    }
+  }
+
+  // PHƯƠNG ÁN CUỐI: bóc riêng content/options bằng regex (kể cả khi JSON bị cắt)
+  let content = '';
+  const cMatch = t.match(/"content"\s*:\s*"([\s\S]*?)"\s*(?:,\s*"options"|\})/) ||
+                 t.match(/"content"\s*:\s*"([\s\S]*)/);
+  if (cMatch) {
+    content = cMatch[1].replace(/"\s*$/, '');
+  } else {
+    content = t.replace(/```json|```|^\s*\{|\}\s*$/g, '').trim();
+  }
+  content = content
+    .replace(/\\n/g, '\n')
+    .replace(/\\"/g, '"')
+    .replace(/\\t/g, '  ')
+    .trim();
+
+  let options = [];
+  const oMatch = t.match(/"options"\s*:\s*\[([\s\S]*?)\]/);
+  if (oMatch) {
+    options = oMatch[1]
+      .split(',')
+      .map((s) => s.trim().replace(/^"|"$/g, '').replace(/\\"/g, '"'))
+      .filter((s) => s.length > 0);
+  }
+
+  return { content, options };
 }
 
 module.exports = { generateChapter, buildWorldContext };

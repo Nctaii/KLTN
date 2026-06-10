@@ -51,10 +51,11 @@ class HomeScreen extends ConsumerWidget {
               Text('Tên hiển thị: ${user.displayName}'),
               const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
+              onPressed: () async {
+                await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => const ScenarioListScreen(),
                 ));
+                ref.invalidate(mySessionsProvider); // quay về -> làm mới
               },
               icon: const Icon(Icons.menu_book),
               label: const Text('Khám phá & tạo scenario'),
@@ -103,14 +104,15 @@ class _MySessionsList extends ConsumerWidget {
                   '${s.mcName ?? "?"} · ${s.chapterCount} chương',
                 ),
                 trailing: const Icon(Icons.play_arrow),
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
+                onTap: () async {
+                  await Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => PlayScreen(
                       storyId: s.storyId,
                       storyTitle: s.storyTitle,
-                      existingSessionId: s.sessionId, // mở lại lượt cũ
+                      existingSessionId: s.sessionId,
                     ),
                   ));
+                  ref.invalidate(mySessionsProvider); // quay về -> làm mới
                 },
               ),
             );

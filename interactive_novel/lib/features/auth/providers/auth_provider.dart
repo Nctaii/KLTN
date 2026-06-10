@@ -9,7 +9,6 @@ import '../models/auth_user.dart';
 part 'auth_provider.g.dart';
 
 @riverpod
-@riverpod
 Dio dio(Ref ref) {
   final dio = Dio(BaseOptions(
     baseUrl: ApiConfig.baseUrl,

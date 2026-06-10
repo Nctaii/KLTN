@@ -209,4 +209,12 @@ async function listMySessions(userId) {
   return rows;
 }
 
-module.exports = { startPlay, continuePlay, getPlaythrough, listMySessions };
+// Xóa các lượt chơi của user cho một scenario cụ thể
+async function deleteSessionsByStory(userId, storyId) {
+  await query(
+    `DELETE FROM play_sessions WHERE user_id = $1 AND story_id = $2`,
+    [userId, storyId]
+  );
+}
+
+module.exports = { startPlay, continuePlay, getPlaythrough, listMySessions, deleteSessionsByStory };

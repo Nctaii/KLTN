@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:interactive_novel/features/play/screen/play_screen.dart';
 import '../providers/scenario_provider.dart';
 import 'create_scenario_screen.dart';
+import '../../play/providers/play_provider.dart';
 
 class ScenarioListScreen extends ConsumerWidget {
   const ScenarioListScreen({super.key});
@@ -11,7 +12,51 @@ class ScenarioListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listAsync = ref.watch(scenarioListProvider);
 
-    void _startPlay(BuildContext context, String storyId, String title) {
+    Future<void> _startPlay(
+      BuildContext context, WidgetRef ref, String storyId, String title) async {
+    // Kiểm tra đã có lượt chơi cho scenario này chưa
+    final sessions = ref.read(mySessionsProvider).valueOrNull ?? [];
+    final hasOld = sessions.any((s) => s.storyId == storyId);
+
+    if (hasOld) {
+      // Hỏi xác nhận xóa lượt cũ
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Đã có lượt chơi'),
+          content: Text(
+            'Bạn đã có một lượt chơi dở cho "$title". '
+            'Bắt đầu lượt mới sẽ xóa tiến trình cũ. Tiếp tục?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Xóa & chơi mới'),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+      // Xóa lượt cũ
+      try {
+        await ref.read(playServiceProvider).deleteByStory(storyId);
+        await ref.read(mySessionsProvider.notifier).refresh();
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Không xóa được lượt cũ: $e')),
+          );
+        }
+        return;
+      }
+    }
+
+    // Hộp thoại nhập tên nhân vật
+    if (!context.mounted) return;
     final nameCtrl = TextEditingController();
     showDialog(
       context: context,
@@ -100,7 +145,7 @@ class ScenarioListScreen extends ConsumerWidget {
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      _startPlay(context, s.id, s.title);
+                      _startPlay(context, ref, s.id, s.title);
                     },
                   ),
                 );
