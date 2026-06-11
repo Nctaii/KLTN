@@ -7,11 +7,19 @@ import '../../play/providers/play_provider.dart';
 import '../widgets/scenario_card.dart';
 import 'scenario_detail_screen.dart';
 
-class ScenarioListScreen extends ConsumerWidget {
+class ScenarioListScreen extends ConsumerStatefulWidget {
   const ScenarioListScreen({super.key});
+  @override
+  ConsumerState<ScenarioListScreen> createState() =>
+      _ScenarioListScreenState();
+}
+
+class _ScenarioListScreenState extends ConsumerState<ScenarioListScreen> {
+  String _selectedGenre = 'Tất cả'; // bộ lọc đang chọn
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final ref = this.ref; // để các đoạn code cũ dùng 'ref' vẫn chạy
     final listAsync = ref.watch(scenarioListProvider);
 
     Future<void> _startPlay(
@@ -113,9 +121,31 @@ class ScenarioListScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Tạo mới'),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(scenarioListProvider.notifier).refresh(),
-        child: listAsync.when(
+      body: Column(
+        children: [
+          // Thanh lọc thể loại
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: ['Tất cả', 'Tiên hiệp', 'Fantasy'].map((g) {
+                final selected = _selectedGenre == g;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(g),
+                    selected: selected,
+                    onSelected: (_) => setState(() => _selectedGenre = g),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () =>
+                  ref.read(scenarioListProvider.notifier).refresh(),
+              child: listAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => ListView(
             children: [
@@ -123,7 +153,13 @@ class ScenarioListScreen extends ConsumerWidget {
               Center(child: Text('Lỗi tải danh sách: $e')),
             ],
           ),
-          data: (scenarios) {
+          data: (allScenarios) {
+            // Lọc theo thể loại đang chọn
+            final scenarios = _selectedGenre == 'Tất cả'
+                ? allScenarios
+                : allScenarios
+                    .where((s) => s.genres.contains(_selectedGenre))
+                    .toList();
             if (scenarios.isEmpty) {
               return ListView(
                 children: const [
@@ -150,7 +186,10 @@ class ScenarioListScreen extends ConsumerWidget {
               },
             );
           },
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

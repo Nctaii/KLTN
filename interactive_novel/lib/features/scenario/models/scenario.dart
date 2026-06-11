@@ -75,6 +75,17 @@ class ScenarioInput {
       'key_characters': keyCharacters.map((c) => c.toJson()).toList(),
     };
     // Chỉ thêm phần tiên hiệp nếu thể loại tiên hiệp được chọn (genre_id = 1)
+
+    // Phần Fantasy nếu chọn thể loại Fantasy (genre_id = 2)
+    if (genreIds.contains(2)) {
+      body['fnt'] = {
+        'magic_system': magicSystem,
+        'has_mana': true,
+        'classes': classes.map((c) => {'name': c}).toList(),
+        'races': races.map((r) => {'name': r}).toList(),
+      };
+    }
+    
     if (genreIds.contains(1)) {
       body['xh'] = {
         'cultivation_note': cultivationNote,

@@ -36,7 +36,9 @@ function buildWorldContext(scenario) {
     if (scenario.fnt.magic_system)
       lines.push(`Ma pháp: ${scenario.fnt.magic_system}`);
     if (scenario.fnt.classes?.length)
-      lines.push('Class: ' + scenario.fnt.classes.map((c) => c.name).join(', '));
+      lines.push('Lớp nhân vật: ' + scenario.fnt.classes.map((c) => c.name).join(', '));
+    if (scenario.fnt.races?.length)
+      lines.push('Chủng tộc: ' + scenario.fnt.races.map((r) => r.name).join(', '));
   }
   return lines.join('\n');
 }
