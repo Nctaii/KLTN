@@ -63,6 +63,7 @@ async function createAndSendOtp(userId, email, purpose = 'verify_email') {
 // Nếu email đã tồn tại nhưng CHƯA xác minh -> cho đăng ký lại (đè lên + gửi OTP mới).
 // Nếu email đã tồn tại và ĐÃ xác minh -> báo lỗi.
 async function register({ email, username, password }) {
+  console.log('>>> REQUIRE_EMAIL_VERIFICATION =', REQUIRE_EMAIL_VERIFICATION);
   if (!email || !username || !password) {
     throw new ApiError(400, 'Thiếu email, username hoặc password');
   }
