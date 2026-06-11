@@ -39,6 +39,9 @@ class ScenarioInput {
   List<KeyCharacter> keyCharacters;
   String cultivationNote; // chỉ dùng nếu có tiên hiệp
   List<Realm> realms; // chỉ dùng nếu có tiên hiệp
+  String magicSystem; // Fantasy
+  List<String> classes; // Fantasy: tên các lớp
+  List<String> races; // Fantasy: tên các chủng tộc
 
   ScenarioInput({
     this.title = '',
@@ -52,6 +55,9 @@ class ScenarioInput {
     this.keyCharacters = const [],
     this.cultivationNote = '',
     this.realms = const [],
+    this.magicSystem = '',
+    this.classes = const [],
+    this.races = const [],
   });
 
   Map<String, dynamic> toJson() {

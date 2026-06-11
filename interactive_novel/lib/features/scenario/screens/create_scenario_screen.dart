@@ -36,6 +36,10 @@ class _CreateScenarioScreenState
   // Danh sách cảnh giới (động, chỉ dùng cho tiên hiệp)
   final List<TextEditingController> _realms = [];
 
+  final _magicSystem = TextEditingController();
+  final List<TextEditingController> _classes = [];
+  final List<TextEditingController> _races = [];
+
   bool _submitting = false;
 
   @override
@@ -54,6 +58,9 @@ class _CreateScenarioScreenState
       c.dispose();
     }
     super.dispose();
+    _magicSystem.dispose();
+    for (final c in _classes) c.dispose();
+    for (final c in _races) c.dispose();
   }
 
   void _addCharacter() {
@@ -68,6 +75,11 @@ class _CreateScenarioScreenState
   void _addRealm() {
     setState(() => _realms.add(TextEditingController()));
   }
+
+  void _addClass() => setState(() => _classes.add(TextEditingController()));
+  void _addRace() => setState(() => _races.add(TextEditingController()));
+
+  bool get _isFantasy => _genre == 2;
 
   bool get _isXianxia => _genre == 1;
 
@@ -116,6 +128,13 @@ class _CreateScenarioScreenState
               .entries
               .map((e) => Realm(name: e.value.text.trim(), tier: e.key + 1))
               .toList()
+          : [],
+      magicSystem: _isFantasy ? _magicSystem.text.trim() : '',
+      classes: _isFantasy
+          ? _classes.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList()
+          : [],
+      races: _isFantasy
+          ? _races.map((r) => r.text.trim()).where((t) => t.isNotEmpty).toList()
           : [],
     );
 
@@ -349,6 +368,87 @@ class _CreateScenarioScreenState
                       onPressed: () => setState(() {
                         e.value.dispose();
                         _realms.removeAt(i);
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 20),
+          ],
+
+          // Phần Fantasy: chỉ hiện khi chọn thể loại Fantasy
+          if (_isFantasy) ...[
+            _label('Thế giới Fantasy'),
+            TextField(
+              controller: _magicSystem,
+              decoration: const InputDecoration(
+                labelText: 'Hệ thống ma pháp',
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Expanded(child: Text('Lớp nhân vật')),
+                IconButton.filled(
+                  onPressed: _addClass,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Thêm lớp',
+                ),
+              ],
+            ),
+            ..._classes.asMap().entries.map((e) {
+              final i = e.key;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: e.value,
+                        decoration: InputDecoration(labelText: 'Lớp ${i + 1}'),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => setState(() {
+                        e.value.dispose();
+                        _classes.removeAt(i);
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Expanded(child: Text('Chủng tộc')),
+                IconButton.filled(
+                  onPressed: _addRace,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Thêm chủng tộc',
+                ),
+              ],
+            ),
+            ..._races.asMap().entries.map((e) {
+              final i = e.key;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: e.value,
+                        decoration: InputDecoration(labelText: 'Chủng tộc ${i + 1}'),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => setState(() {
+                        e.value.dispose();
+                        _races.removeAt(i);
                       }),
                     ),
                   ],

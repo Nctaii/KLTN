@@ -89,6 +89,15 @@ async function createScenario(authorId, body) {
           [story.id, c.name, c.description || null, c.base_mana || 0, c.base_hp || 100, ci++]
         );
       }
+      // Chủng tộc Fantasy
+      let ri = 0;
+      for (const r of fnt.races || []) {
+        await client.query(
+          `INSERT INTO fnt_races (story_id, name, description, order_index)
+           VALUES ($1, $2, $3, $4)`,
+          [story.id, r.name, r.description || null, ri++]
+        );
+      }
     }
 
     return story;
@@ -104,7 +113,7 @@ async function getScenarioFull(storyId) {
   if (!storyRows[0]) throw new ApiError(404, 'Không tìm thấy scenario');
   const story = storyRows[0];
 
-  const [world, chars, genres, xhConf, realms, fntConf, classes] =
+  const [world, chars, genres, xhConf, realms, fntConf, classes, races] =
     await Promise.all([
       query(`SELECT * FROM scenario_world WHERE story_id = $1`, [storyId]),
       query(
@@ -126,6 +135,10 @@ async function getScenarioFull(storyId) {
         `SELECT * FROM fnt_classes WHERE story_id = $1 ORDER BY order_index`,
         [storyId]
       ),
+      query(
+        `SELECT * FROM fnt_races WHERE story_id = $1 ORDER BY order_index`,
+        [storyId]
+      ),
     ]);
 
   return {
@@ -137,7 +150,7 @@ async function getScenarioFull(storyId) {
       ? { ...xhConf.rows[0], realms: realms.rows }
       : null,
     fnt: fntConf.rows[0]
-      ? { ...fntConf.rows[0], classes: classes.rows }
+      ? { ...fntConf.rows[0], classes: classes.rows, races: races.rows }
       : null,
   };
 }
