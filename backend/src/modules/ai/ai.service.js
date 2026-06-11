@@ -63,30 +63,82 @@ function mockChapter({ mcName, previousChapters, direction }) {
   };
 }
 
-async function generateChapter({ scenario, mcName, previousChapters, direction }) {
+// Hướng dẫn văn phong riêng theo thể loại
+function buildStyleGuide(scenario) {
+  const genreNames = (scenario.genres || []).map((g) => g.name || g).join(', ');
+  const isXianxia = genreNames.includes('Tiên hiệp');
+  const isFantasy = genreNames.includes('Fantasy');
+
+  if (isXianxia) {
+    return `VĂN PHONG TIÊN HIỆP:
+- Dùng từ thuần Việt hoặc Hán Việt, TUYỆT ĐỐI KHÔNG chêm tiếng Anh hay phiên âm pinyin. Ví dụ: viết "đan điền" (KHÔNG viết "dantian"), "linh khí" (KHÔNG viết "qi"), "áo vải" (KHÔNG viết "linen").
+- Giọng văn cổ phong, trang trọng, giàu hình ảnh tu tiên: cảnh giới, linh khí, kiếm ý, đạo tâm.
+- QUY TẮC XƯNG HÔ (rất quan trọng, phải đúng vai vế, KHÔNG dùng đại từ hiện đại như "tôi", "cậu", "bạn"):
+  + Bậc trên (sư phụ, trưởng bối, người lớn tuổi) khi tự xưng dùng "ta"; gọi người dưới là "ngươi" hoặc "con".
+  + Bậc dưới (đệ tử, vãn bối) khi tự xưng dùng "con", "đệ tử" hoặc "tại hạ"; gọi bậc trên là "sư phụ", "tiền bối".
+  + Người kể chuyện gọi nhân vật lớn tuổi/bậc trên là "ông", "lão", "vị" (KHÔNG gọi là "cậu", "anh ấy"). Nhân vật trẻ tuổi mới gọi là "chàng", "nàng", "cậu".
+  + Người ngang hàng xưng "ta" gọi "ngươi" hoặc "đạo hữu".
+- Ví dụ đúng: Sư phụ nói với đệ tử: "Ngươi đã sẵn sàng chưa? Ta sẽ truyền cho ngươi tâm pháp." Người kể: "Lão chậm rãi nâng tay."`;
+  }
+  if (isFantasy) {
+    return `VĂN PHONG FANTASY:
+- Viết bằng tiếng Việt tự nhiên. CHỈ giữ nguyên tiếng Anh cho TÊN RIÊNG (tên người, địa danh, vương quốc), ví dụ "Eldoria", "Arthur". Mọi từ khác phải dịch sang tiếng Việt: viết "áo choàng" (KHÔNG viết "cloak"), "pháp sư" (KHÔNG viết "mage").
+- Giọng văn sử thi phương Tây, phiêu lưu, kỳ ảo.
+- Xưng hô nhất quán theo vai vế: bậc trên/lớn tuổi tự xưng "ta" gọi người dưới "ngươi" hoặc "con"; người kể gọi nhân vật lớn tuổi là "ông", "bà", "lão". Tránh dùng lẫn lộn "tôi"/"cậu" theo lối hiện đại trong lời thoại trang trọng.`;
+  }
+  return '';
+}
+
+// Sinh một chương. Trả về { content, options, summary, tokenUsed }
+async function generateChapter({ scenario, mcName, previousChapters, direction, runningSummary }) {
   // Chế độ giả lập: trả ngay, KHÔNG gọi Claude
   if (MOCK_MODE) {
     return mockChapter({ mcName, previousChapters, direction });
   }
 
   const worldContext = buildWorldContext(scenario);
+  const styleGuide = buildStyleGuide(scenario);
+  // TỐI ƯU TOKEN #2: system prompt ngắn gọn, không lặp lại mỗi field dài dòng.
   const systemPrompt = `Bạn là người kể chuyện cho tiểu thuyết tương tác nhập vai, viết bằng tiếng Việt, văn phong cuốn hút.
 Mỗi chương khoảng ${CHAPTER_WORDS} từ. Nhân vật chính tên "${mcName}", người đọc nhập vai vào nhân vật này.
+
+${styleGuide}
+
+QUY TẮC VẬT PHẨM: Khi một vật phẩm quan trọng xuất hiện lần đầu, giải thích tác dụng ngay sau dấu gạch ngang. Ví dụ: "Tụ Linh Đan - đan dược giúp hồi phục linh lực nhanh chóng" hoặc "Kiếm Hàn Băng - thanh kiếm tỏa hàn khí, chém đứt mọi giáp trụ".
+
 Bám sát bối cảnh sau:
 ${worldContext}
 
 Chỉ trả về JSON đúng cấu trúc, không thêm lời dẫn:
-{"content":"<nội dung chương>","options":["<hướng đi 1>","<hướng đi 2>","<hướng đi 3>"]}
-options là 2-4 hướng đi ngắn gọn cho chương kế tiếp.`;
+{"content":"<nội dung chương>","options":["<hướng đi 1>","<hướng đi 2>","<hướng đi 3>"],"summary":"<tóm tắt tích lũy cập nhật>"}
+- options: BẮT BUỘC có ĐÚNG 2 đến 4 hướng đi, mỗi hướng đi là một câu ngắn gọn (KHÔNG dùng dấu phẩy bên trong mỗi hướng đi). Đây là các lựa chọn cho chương kế tiếp.
+- summary: bản tóm tắt NGẮN GỌN (tối đa 200 từ) toàn bộ diễn biến truyện TÍNH ĐẾN HẾT chương vừa viết, gồm các tình tiết, nhân vật, vật phẩm, mâu thuẫn quan trọng để giữ mạch truyện nhất quán. Cập nhật từ tóm tắt cũ (nếu có) bằng cách bổ sung diễn biến mới, không bỏ sót điều cũ quan trọng.`;
 
   const messages = [];
+
+  // Bản tóm tắt tích lũy (toàn bộ quá khứ, cô đọng) — giúp AI nhớ truyện dài
+  if (runningSummary && runningSummary.trim()) {
+    messages.push({
+      role: 'user',
+      content: `Tóm tắt toàn bộ diễn biến truyện từ đầu đến nay:\n${runningSummary}`,
+    });
+    messages.push({ role: 'assistant', content: 'Tôi đã nắm toàn bộ mạch truyện.' });
+  }
+
+  // TỐI ƯU TOKEN #3: chỉ đưa N chương GẦN NHẤT nguyên văn (giữ giọng văn liền mạch).
   if (previousChapters?.length) {
     const recent = previousChapters.slice(-RECENT_CHAPTERS_WINDOW);
-    const summary = recent
-      .map((c) => `Chương ${c.chapter_number}: ${c.content.slice(0, SUMMARY_MAX_CHARS)}`)
+    const recentText = recent
+      .map(
+        (c) =>
+          `Chương ${c.chapter_number}: ${c.content.slice(0, SUMMARY_MAX_CHARS)}`
+      )
       .join('\n\n');
-    messages.push({ role: 'user', content: `Tóm tắt diễn biến gần đây:\n${summary}` });
-    messages.push({ role: 'assistant', content: 'Đã nắm được mạch truyện.' });
+    messages.push({
+      role: 'user',
+      content: `Nội dung ${recent.length} chương gần nhất:\n${recentText}`,
+    });
+    messages.push({ role: 'assistant', content: 'Đã nắm được diễn biến gần đây.' });
   }
   messages.push({
     role: 'user',
@@ -99,8 +151,7 @@ options là 2-4 hướng đi ngắn gọn cho chương kế tiếp.`;
   messages.push({ role: 'assistant', content: '{' });
 
   // TỐI ƯU TOKEN #4: max_tokens đủ dư để JSON không bị cắt.
-  // Tiếng Việt ~2 token/từ; cộng đệm cho phần options + cấu trúc JSON.
-  const maxTokens = Math.round(CHAPTER_WORDS * 2.5) + 600;
+  const maxTokens = Math.round(CHAPTER_WORDS * 2.5) + 800;
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
@@ -116,9 +167,19 @@ options là 2-4 hướng đi ngắn gọn cho chương kế tiếp.`;
   const tokenUsed =
     (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
 
+  // Đảm bảo 2-4 hướng đi: bỏ rỗng/trùng, cắt còn tối đa 4
+  let cleanOptions = (parsed.options || [])
+    .map((o) => (o || '').toString().trim())
+    .filter((o) => o.length > 0);
+  // Bỏ trùng lặp
+  cleanOptions = [...new Set(cleanOptions)];
+  // Tối đa 4
+  cleanOptions = cleanOptions.slice(0, 4);
+
   return {
     content: parsed.content || '',
-    options: parsed.options || [],
+    options: cleanOptions,
+    summary: parsed.summary || '',
     tokenUsed,
   };
 }
@@ -133,7 +194,7 @@ function safeParseJson(text) {
 
   try {
     const obj = JSON.parse(t);
-    return { content: obj.content || '', options: obj.options || [] };
+    return { content: obj.content || '', options: obj.options || [], summary: obj.summary || '' };
   } catch {
     /* tiếp tục bóc thủ công */
   }
@@ -142,7 +203,7 @@ function safeParseJson(text) {
   if (brace) {
     try {
       const obj = JSON.parse(brace[0]);
-      return { content: obj.content || '', options: obj.options || [] };
+      return { content: obj.content || '', options: obj.options || [], summary: obj.summary || '' };
     } catch {
       /* rơi xuống bóc regex */
     }
@@ -166,13 +227,26 @@ function safeParseJson(text) {
   let options = [];
   const oMatch = t.match(/"options"\s*:\s*\[([\s\S]*?)\]/);
   if (oMatch) {
-    options = oMatch[1]
-      .split(',')
-      .map((s) => s.trim().replace(/^"|"$/g, '').replace(/\\"/g, '"'))
+    // Bóc từng chuỗi nằm trong dấu ngoặc kép (tránh tách nhầm khi option có dấu phẩy)
+    const items = oMatch[1].match(/"((?:[^"\\]|\\.)*)"/g) || [];
+    options = items
+      .map((s) => s.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, ' ').trim())
       .filter((s) => s.length > 0);
   }
 
-  return { content, options };
+  // Bóc summary nếu có (regex, chịu được JSON cắt)
+  let summary = '';
+  const sMatch = t.match(/"summary"\s*:\s*"([\s\S]*?)"\s*\}?\s*$/) ||
+                 t.match(/"summary"\s*:\s*"([\s\S]*)/);
+  if (sMatch) {
+    summary = sMatch[1]
+      .replace(/"\s*\}?\s*$/, '')
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
+      .trim();
+  }
+
+  return { content, options, summary };
 }
 
 module.exports = { generateChapter, buildWorldContext };

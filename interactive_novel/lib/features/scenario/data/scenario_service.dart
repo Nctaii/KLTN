@@ -94,6 +94,16 @@ class ScenarioService {
     _ok(res);
   }
 
+  // Sửa tên/mô tả scenario
+  Future<void> updateInfo(String storyId,
+      {String? title, String? description}) async {
+    final res = await _dio.patch('/scenarios/$storyId', data: {
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+    });
+    _ok(res);
+  }
+
   // Xóa scenario của mình
   Future<void> deleteScenario(String storyId) async {
     final res = await _dio.delete('/scenarios/$storyId');

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:interactive_novel/features/play/screen/play_screen.dart';
 import '../play/providers/play_provider.dart';
 import '../scenario/providers/scenario_provider.dart';
+import '../scenario/screens/edit_scenario_screen.dart';
 
 // Tab Saves: lượt chơi dở + scenario của tôi tạo
 class SavesTab extends ConsumerWidget {
@@ -138,10 +139,26 @@ class SavesTab extends ConsumerWidget {
                       child: ListTile(
                         title: Text(s.title),
                         subtitle: Text('${s.genres.join(", ")} · ${s.playCount} lượt chơi'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Xóa scenario',
-                          onPressed: () => _confirmDelete(context, ref, s.id, s.title),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined),
+                              tooltip: 'Sửa',
+                              onPressed: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) =>
+                                      EditScenarioScreen(scenario: s),
+                                ));
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Xóa scenario',
+                              onPressed: () =>
+                                  _confirmDelete(context, ref, s.id, s.title),
+                            ),
+                          ],
                         ),
                       ),
                     );

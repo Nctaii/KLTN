@@ -10,6 +10,7 @@ router.get('/', ctrl.list);
 router.get('/mine', auth, ctrl.listMine);
 router.post('/', auth, ctrl.create);
 router.get('/:id', ctrl.getOne);
+router.patch('/:id', auth, ctrl.update);
 router.post('/:id/publish', auth, ctrl.publish);
 router.post('/:id/cover', auth, coverUpload.single('cover'), ctrl.uploadCover);
 router.delete('/:id', auth, ctrl.remove);

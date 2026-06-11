@@ -217,11 +217,27 @@ async function deleteScenario(authorId, storyId) {
   return { deleted: true };
 }
 
+// Sửa thông tin cơ bản scenario (tên, mô tả) — chỉ tác giả
+async function updateScenarioInfo(authorId, storyId, { title, description }) {
+  const { rows } = await query(
+    `UPDATE stories SET
+       title = COALESCE($1, title),
+       description = COALESCE($2, description),
+       updated_at = now()
+     WHERE id = $3 AND author_id = $4 RETURNING id, title, description`,
+    [title ?? null, description ?? null, storyId, authorId]
+  );
+  if (!rows[0]) throw new ApiError(403, 'Không có quyền sửa scenario này');
+  return rows[0];
+}
+
 module.exports = {
-  updateCover,
-  deleteScenario,
+  createScenario,
   getScenarioFull,
   listPublished,
   publishScenario,
   listMyScenarios,
+  updateCover,
+  deleteScenario,
+  updateScenarioInfo,
 };

@@ -21,6 +21,7 @@ class PlayScreen extends ConsumerStatefulWidget {
 }
 
 class _PlayScreenState extends ConsumerState<PlayScreen> {
+  bool _optionsExpanded = true; // phần lựa chọn đang mở hay thu gọn
   final _pageController = PageController();
   final _customCtrl = TextEditingController();
 
@@ -361,32 +362,45 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Bạn sẽ làm gì tiếp theo?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: theme.textTheme.bodySmall?.color,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Các lựa chọn AI gợi ý
-                  ...lastChapter.options.map((opt) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: OutlinedButton(
-                          onPressed: () => _continue(optionId: opt.id),
-                          style: OutlinedButton.styleFrom(
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.all(14),
-                          ),
-                          child: Text(opt.label),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Bạn sẽ làm gì tiếp theo?',
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
-                      )),
-                  // Nút tự viết
-                  TextButton.icon(
-                    onPressed: _openCustomDialog,
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Tự viết hướng đi khác'),
+                      ),
+                      IconButton(
+                        icon: Icon(_optionsExpanded
+                            ? Icons.keyboard_arrow_down
+                            : Icons.keyboard_arrow_up),
+                        tooltip: _optionsExpanded ? 'Thu gọn' : 'Mở rộng',
+                        onPressed: () =>
+                            setState(() => _optionsExpanded = !_optionsExpanded),
+                      ),
+                    ],
                   ),
+                  if (_optionsExpanded) ...[
+                    const SizedBox(height: 10),
+                    // Các lựa chọn AI gợi ý
+                    ...lastChapter.options.map((opt) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: OutlinedButton(
+                            onPressed: () => _continue(optionId: opt.id),
+                            style: OutlinedButton.styleFrom(
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.all(14),
+                            ),
+                            child: Text(opt.label),
+                          ),
+                        )),
+                    // Nút tự viết
+                    TextButton.icon(
+                      onPressed: _openCustomDialog,
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Tự viết hướng đi khác'),
+                    ),
+                  ],
                 ],
               ),
       ),

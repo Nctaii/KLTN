@@ -40,3 +40,12 @@ exports.remove = asyncHandler(async (req, res) => {
   await svc.deleteScenario(req.user.id, req.params.id);
   res.json({ message: 'Đã xóa scenario' });
 });
+
+// PATCH /scenarios/:id -> sửa tên, mô tả
+exports.update = asyncHandler(async (req, res) => {
+  const result = await svc.updateScenarioInfo(req.user.id, req.params.id, {
+    title: req.body.title,
+    description: req.body.description,
+  });
+  res.json({ scenario: result });
+});

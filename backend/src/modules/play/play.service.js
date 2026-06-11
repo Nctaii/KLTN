@@ -55,6 +55,14 @@ async function startPlay(userId, storyId, mcNameInput) {
     tokenUsed: gen.tokenUsed,
   });
 
+  // Lưu tóm tắt tích lũy ban đầu (sau chương 1)
+  if (gen.summary && gen.summary.trim()) {
+    await query(
+      `UPDATE play_sessions SET running_summary = $1 WHERE id = $2`,
+      [gen.summary.trim(), session.id]
+    );
+  }
+
   return { session_id: session.id, mc_name: mcName, chapter };
 }
 
@@ -146,6 +154,7 @@ async function continuePlay(userId, sessionId, { option_id, custom_direction }) 
     mcName: session.mc_name,
     previousChapters: prev,
     direction,
+    runningSummary: session.running_summary || '',
   });
 
   const chapter = await saveChapter({
@@ -157,6 +166,14 @@ async function continuePlay(userId, sessionId, { option_id, custom_direction }) 
     directionSource,
     tokenUsed: gen.tokenUsed,
   });
+
+  // Lưu bản tóm tắt tích lũy mới (nếu AI trả về) để chương sau dùng
+  if (gen.summary && gen.summary.trim()) {
+    await query(
+      `UPDATE play_sessions SET running_summary = $1 WHERE id = $2`,
+      [gen.summary.trim(), sessionId]
+    );
+  }
 
   await query(
     `UPDATE play_sessions SET last_played_at = now() WHERE id = $1`,
