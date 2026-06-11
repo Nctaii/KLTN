@@ -241,7 +241,7 @@ async function refresh(refreshToken) {
 
 async function getMe(userId) {
   const { rows } = await query(
-    `SELECT u.id, u.email, u.username, u.role, u.is_verified, p.display_name
+    `SELECT u.id, u.email, u.username, u.role, u.is_verified, p.display_name, p.avatar_url
      FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id
      WHERE u.id = $1`,
     [userId]

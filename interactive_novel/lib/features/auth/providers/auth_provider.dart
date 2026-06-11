@@ -117,7 +117,7 @@ class AuthNotifier extends _$AuthNotifier {
     state = await AsyncValue.guard(() async {
       final r = await ref.read(authServiceProvider).login(email, password);
       await ref.read(tokenStorageProvider).saveTokens(r.access, r.refresh);
-      return r.user;
+      return await ref.read(authServiceProvider).fetchMe(r.access);
     });
   }
 

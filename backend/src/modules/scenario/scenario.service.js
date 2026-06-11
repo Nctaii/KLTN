@@ -145,8 +145,10 @@ async function getScenarioFull(storyId) {
 // Danh sách scenario đã publish (để người chơi duyệt)
 async function listPublished() {
   const { rows } = await query(
-    `SELECT s.id, s.title, s.description, s.play_count,
-            array_agg(g.name) AS genres
+    `SELECT s.id, s.title, s.description, s.play_count, s.cover_url,
+            array_agg(DISTINCT g.name) AS genres,
+            (SELECT COUNT(*)::int FROM story_likes l WHERE l.story_id = s.id) AS like_count,
+            (SELECT COUNT(*)::int FROM comments c WHERE c.story_id = s.id) AS comment_count
      FROM stories s
      LEFT JOIN story_genres sg ON sg.story_id = s.id
      LEFT JOIN genres g ON g.id = sg.genre_id
@@ -166,9 +168,47 @@ async function publishScenario(storyId, authorId) {
   return rows[0];
 }
 
+// Danh sách scenario do chính user tạo (mọi trạng thái)
+async function listMyScenarios(authorId) {
+  const { rows } = await query(
+    `SELECT s.id, s.title, s.description, s.play_count, s.status,
+            array_agg(g.name) AS genres
+     FROM stories s
+     LEFT JOIN story_genres sg ON sg.story_id = s.id
+     LEFT JOIN genres g ON g.id = sg.genre_id
+     WHERE s.author_id = $1
+     GROUP BY s.id ORDER BY s.created_at DESC`,
+    [authorId]
+  );
+  return rows;
+}
+
+// Cập nhật ảnh bìa scenario (chỉ tác giả mới được sửa)
+async function updateCover(authorId, storyId, coverUrl) {
+  const { rows } = await query(
+    `UPDATE stories SET cover_url = $1
+     WHERE id = $2 AND author_id = $3 RETURNING id`,
+    [coverUrl, storyId, authorId]
+  );
+  if (!rows[0]) throw new ApiError(403, 'Không có quyền sửa scenario này');
+  return { cover_url: coverUrl };
+}
+
+// Xóa scenario (chỉ tác giả mới được xóa). CASCADE tự xóa dữ liệu liên quan.
+async function deleteScenario(authorId, storyId) {
+  const { rows } = await query(
+    `DELETE FROM stories WHERE id = $1 AND author_id = $2 RETURNING id`,
+    [storyId, authorId]
+  );
+  if (!rows[0]) throw new ApiError(403, 'Không có quyền xóa scenario này');
+  return { deleted: true };
+}
+
 module.exports = {
-  createScenario,
+  updateCover,
+  deleteScenario,
   getScenarioFull,
   listPublished,
   publishScenario,
+  listMyScenarios,
 };

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../models/scenario.dart';
+import '../models/interaction.dart';
 
 class ScenarioService {
   final Dio _dio;
@@ -37,6 +38,65 @@ class ScenarioService {
   // Publish một scenario
   Future<void> publish(String storyId) async {
     final res = await _dio.post('/scenarios/$storyId/publish');
+    _ok(res);
+  }
+
+  // Lấy scenario do chính user tạo
+  Future<List<ScenarioSummary>> listMine() async {
+    final res = await _dio.get('/scenarios/mine');
+    final data = _ok(res);
+    final list = (data['scenarios'] as List?) ?? [];
+    return list
+        .map((e) => ScenarioSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Lấy thông tin like (số like + mình đã like chưa)
+  Future<LikeInfo> getLikeInfo(String storyId) async {
+    final res = await _dio.get('/scenarios/$storyId/like');
+    final data = _ok(res);
+    return LikeInfo.fromJson(data);
+  }
+
+  // Bật/tắt like, trả về trạng thái mới
+  Future<LikeInfo> toggleLike(String storyId) async {
+    final res = await _dio.post('/scenarios/$storyId/like');
+    final data = _ok(res);
+    return LikeInfo(
+      likeCount: (data['likeCount'] ?? 0) as int,
+      likedByMe: (data['liked'] ?? false) as bool,
+    );
+  }
+
+  // Danh sách comment
+  Future<List<ScenarioComment>> listComments(String storyId) async {
+    final res = await _dio.get('/scenarios/$storyId/comments');
+    final data = _ok(res);
+    final list = (data['comments'] as List?) ?? [];
+    return list
+        .map((e) => ScenarioComment.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Thêm comment
+  Future<void> addComment(String storyId, String content) async {
+    final res = await _dio.post('/scenarios/$storyId/comments',
+        data: {'content': content});
+    _ok(res);
+  }
+
+  // Upload ảnh bìa cho scenario
+  Future<void> uploadCover(String storyId, String filePath) async {
+    final formData = FormData.fromMap({
+      'cover': await MultipartFile.fromFile(filePath),
+    });
+    final res = await _dio.post('/scenarios/$storyId/cover', data: formData);
+    _ok(res);
+  }
+
+  // Xóa scenario của mình
+  Future<void> deleteScenario(String storyId) async {
+    final res = await _dio.delete('/scenarios/$storyId');
     _ok(res);
   }
 }

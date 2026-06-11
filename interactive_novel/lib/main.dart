@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:interactive_novel/features/shell/main_shell.dart';
 import 'core/app_theme.dart';
 import 'features/theme/theme_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/auth/screens/home_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -37,7 +37,7 @@ class AuthGate extends ConsumerWidget {
       ),
       error: (_, __) => const LoginScreen(),
       data: (user) =>
-          user == null ? const LoginScreen() : HomeScreen(user: user),
+          user == null ? const LoginScreen() : const MainShell(),
     );
   }
 }

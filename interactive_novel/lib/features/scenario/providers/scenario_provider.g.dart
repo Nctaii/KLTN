@@ -38,5 +38,20 @@ final scenarioListProvider = AutoDisposeAsyncNotifierProvider<ScenarioList,
 );
 
 typedef _$ScenarioList = AutoDisposeAsyncNotifier<List<ScenarioSummary>>;
+String _$myScenariosHash() => r'323199916075d15e7fa46076c516356e13c24c9d';
+
+/// See also [MyScenarios].
+@ProviderFor(MyScenarios)
+final myScenariosProvider = AutoDisposeAsyncNotifierProvider<MyScenarios,
+    List<ScenarioSummary>>.internal(
+  MyScenarios.new,
+  name: r'myScenariosProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$myScenariosHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$MyScenarios = AutoDisposeAsyncNotifier<List<ScenarioSummary>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

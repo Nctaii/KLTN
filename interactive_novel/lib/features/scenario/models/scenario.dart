@@ -80,11 +80,15 @@ class ScenarioInput {
 }
 
 // Model scenario tóm tắt (cho danh sách)
+// Model scenario tóm tắt (cho danh sách + card)
 class ScenarioSummary {
   final String id;
   final String title;
   final String? description;
   final int playCount;
+  final int likeCount;
+  final int commentCount;
+  final String? coverUrl;
   final List<String> genres;
 
   ScenarioSummary({
@@ -92,6 +96,9 @@ class ScenarioSummary {
     required this.title,
     this.description,
     required this.playCount,
+    this.likeCount = 0,
+    this.commentCount = 0,
+    this.coverUrl,
     required this.genres,
   });
 
@@ -100,11 +107,21 @@ class ScenarioSummary {
         id: json['id'].toString(),
         title: json['title'] as String,
         description: json['description'] as String?,
-        playCount: (json['play_count'] ?? 0) as int,
+        playCount: _toInt(json['play_count']),
+        likeCount: _toInt(json['like_count']),
+        commentCount: _toInt(json['comment_count']),
+        coverUrl: json['cover_url'] as String?,
         genres: (json['genres'] as List?)
                 ?.where((g) => g != null)
                 .map((g) => g.toString())
                 .toList() ??
             [],
       );
+  // Chuyển giá trị JSON về int an toàn (chịu null, chuỗi, số)
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
 }

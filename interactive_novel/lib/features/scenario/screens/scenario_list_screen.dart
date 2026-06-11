@@ -4,6 +4,8 @@ import 'package:interactive_novel/features/play/screen/play_screen.dart';
 import '../providers/scenario_provider.dart';
 import 'create_scenario_screen.dart';
 import '../../play/providers/play_provider.dart';
+import '../widgets/scenario_card.dart';
+import 'scenario_detail_screen.dart';
 
 class ScenarioListScreen extends ConsumerWidget {
   const ScenarioListScreen({super.key});
@@ -135,19 +137,15 @@ class ScenarioListScreen extends ConsumerWidget {
               itemCount: scenarios.length,
               itemBuilder: (context, i) {
                 final s = scenarios[i];
-                return Card(
-                  color: Theme.of(context).colorScheme.surface,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    title: Text(s.title),
-                    subtitle: Text(
-                      '${s.genres.join(", ")} · ${s.playCount} lượt chơi',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      _startPlay(context, ref, s.id, s.title);
-                    },
-                  ),
+                return ScenarioCard(
+                  scenario: s,
+                  onTap: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => ScenarioDetailScreen(scenario: s),
+                    ));
+                    // Quay về làm mới danh sách (like/comment có thể đã đổi)
+                    ref.read(scenarioListProvider.notifier).refresh();
+                  },
                 );
               },
             );

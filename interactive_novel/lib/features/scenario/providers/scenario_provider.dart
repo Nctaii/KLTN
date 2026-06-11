@@ -26,3 +26,19 @@ class ScenarioList extends _$ScenarioList {
     );
   }
 }
+
+// Danh sách scenario do chính user tạo
+@riverpod
+class MyScenarios extends _$MyScenarios {
+  @override
+  Future<List<ScenarioSummary>> build() async {
+    return ref.read(scenarioServiceProvider).listMine();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(scenarioServiceProvider).listMine(),
+    );
+  }
+}

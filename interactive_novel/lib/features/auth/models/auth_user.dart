@@ -6,6 +6,7 @@ class AuthUser {
   final String role;
   final bool isVerified;
   final String? displayName;
+  final String? avatarUrl;
 
   AuthUser({
     required this.id,
@@ -14,6 +15,7 @@ class AuthUser {
     required this.role,
     required this.isVerified,
     this.displayName,
+    this.avatarUrl,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
@@ -23,5 +25,6 @@ class AuthUser {
         role: (json['role'] ?? 'user') as String,
         isVerified: (json['is_verified'] ?? false) as bool,
         displayName: json['display_name'] as String?,
+        avatarUrl: json['avatar_url'] as String?,
       );
 }

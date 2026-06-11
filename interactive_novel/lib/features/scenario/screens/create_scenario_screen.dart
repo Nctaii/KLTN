@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/scenario.dart';
 import '../providers/scenario_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class CreateScenarioScreen extends ConsumerStatefulWidget {
   const CreateScenarioScreen({super.key});
@@ -24,6 +26,8 @@ class _CreateScenarioScreenState
 
   // Thể loại đang chọn (1 = Tiên hiệp, 2 = Fantasy)
     int _genre = 1;
+  // đường dẫn ảnh bìa đã chọn (chưa upload)
+    String? _coverPath; 
 
   // Danh sách nhân vật quan trọng (động)
   final List<({TextEditingController name, TextEditingController role})>
@@ -67,6 +71,17 @@ class _CreateScenarioScreenState
 
   bool get _isXianxia => _genre == 1;
 
+  Future<void> _pickCover() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      imageQuality: 85,
+    );
+    if (picked != null) {
+      setState(() => _coverPath = picked.path);
+    }
+  }
+
   Future<void> _submit() async {
     if (_title.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +120,11 @@ class _CreateScenarioScreenState
     );
 
     try {
-      await ref.read(scenarioServiceProvider).create(input);
+      final newId = await ref.read(scenarioServiceProvider).create(input);
+      // Nếu có chọn ảnh bìa -> upload cho scenario vừa tạo
+      if (_coverPath != null) {
+        await ref.read(scenarioServiceProvider).uploadCover(newId, _coverPath!);
+      }
       await ref.read(scenarioListProvider.notifier).refresh();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -130,6 +149,7 @@ class _CreateScenarioScreenState
     return Scaffold(
       appBar: AppBar(title: const Text('Tạo scenario mới')),
       body: ListView(
+        
         padding: const EdgeInsets.all(16),
         children: [
           _label('Thông tin chung'),
@@ -137,6 +157,37 @@ class _CreateScenarioScreenState
             controller: _title,
             decoration: const InputDecoration(labelText: 'Tên scenario *'),
           ),
+          // Khu chọn ảnh bìa
+          GestureDetector(
+            onTap: _pickCover,
+            child: Container(
+              height: 160,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                image: _coverPath != null
+                    ? DecorationImage(
+                        image: FileImage(File(_coverPath!)),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: _coverPath == null
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate, size: 40),
+                          SizedBox(height: 8),
+                          Text('Chọn ảnh bìa (tùy chọn)'),
+                        ],
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 20),
           const SizedBox(height: 12),
           TextField(
             controller: _desc,
