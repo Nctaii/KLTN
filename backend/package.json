@@ -8,6 +8,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
     "bcryptjs": "^2.4.3",

@@ -5,7 +5,8 @@ import '../models/auth_user.dart';
 class RegisterResult {
   final AuthUser user;
   final String message;
-  RegisterResult(this.user, this.message);
+  final bool requireVerification;
+  RegisterResult(this.user, this.message, {this.requireVerification = true});
 }
 
 class AuthService {
@@ -40,6 +41,7 @@ class AuthService {
     return RegisterResult(
       AuthUser.fromJson(data['user']),
       (data['message'] ?? 'Đã gửi mã xác minh') as String,
+      requireVerification: (data['requireVerification'] ?? true) as bool,
     );
   }
 

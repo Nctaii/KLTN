@@ -91,11 +91,9 @@ class AuthNotifier extends _$AuthNotifier {
 
   // Đăng ký: KHÔNG đăng nhập ngay (chờ xác minh OTP).
   // Trả về message để màn hình hiển thị; ném lỗi nếu thất bại.
-  Future<String> register(
+  Future<RegisterResult> register(
       String email, String username, String password) async {
-    final result =
-        await ref.read(authServiceProvider).register(email, username, password);
-    return result.message;
+    return ref.read(authServiceProvider).register(email, username, password);
   }
 
   // Xác minh OTP -> đăng nhập luôn (cập nhật state thành user)

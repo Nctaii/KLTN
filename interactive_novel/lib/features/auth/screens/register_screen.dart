@@ -30,6 +30,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    print('>>> ĐÃ BẤM ĐĂNG KÝ, chuẩn bị gọi API');
     // Xóa lỗi cũ
     setState(() {
       _emailError = null;
@@ -61,13 +62,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() => _submitting = true);
     try {
-      await ref
+      final result = await ref
           .read(authNotifierProvider.notifier)
           .register(email, username, pass);
       if (mounted) {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (_) => OtpScreen(email: email),
-        ));
+        if (result.requireVerification) {
+          // Còn yêu cầu xác minh -> sang màn OTP
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (_) => OtpScreen(email: email),
+          ));
+        } else {
+          // Không cần xác minh -> báo thành công, quay về đăng nhập
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đăng ký thành công! Hãy đăng nhập.')),
+          );
+          Navigator.of(context).pop(); // về màn đăng nhập
+        }
       }
     } catch (e) {
       // Đặt lỗi vào đúng ô dựa trên field backend trả về

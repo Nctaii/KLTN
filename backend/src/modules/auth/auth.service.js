@@ -7,6 +7,10 @@ const {
   signRefreshToken,
   verifyRefreshToken,
 } = require('../../utils/jwt');
+// Công tắc xác minh email. Đặt REQUIRE_EMAIL_VERIFICATION=false trên Render
+// để đăng ký tự verify ngay (không gửi OTP), tránh phụ thuộc SMTP.
+const REQUIRE_EMAIL_VERIFICATION =
+  process.env.REQUIRE_EMAIL_VERIFICATION !== 'false';
 const ApiError = require('../../utils/ApiError');
 const mailService = require('../mail/mail.service');
 
@@ -104,7 +108,7 @@ async function register({ email, username, password }) {
       const { rows } = await client.query(
         `INSERT INTO users (email, username, password_hash, is_verified)
          VALUES ($1, $2, $3, FALSE) RETURNING id, email, username, role, is_verified`,
-        [email, username, passwordHash]
+        [email, username, passwordHash, !REQUIRE_EMAIL_VERIFICATION]
       );
       const u = rows[0];
       await client.query(
@@ -115,13 +119,22 @@ async function register({ email, username, password }) {
     });
   }
 
-  await createAndSendOtp(user.id, user.email);
+  // Nếu yêu cầu xác minh -> gửi OTP và báo chờ xác minh.
+  // Nếu tắt -> bỏ qua gửi mail, báo đăng ký thành công luôn.
+  if (REQUIRE_EMAIL_VERIFICATION) {
+    await createAndSendOtp(user.id, user.email);
+    return {
+      user: publicUser(user),
+      message: 'Đã gửi mã xác minh tới email. Vui lòng kiểm tra hộp thư.',
+      requireVerification: true,
+    };
+  }
   return {
     user: publicUser(user),
-    message: 'Đã gửi mã xác minh tới email. Vui lòng kiểm tra hộp thư.',
+    message: 'Đăng ký thành công.',
+    requireVerification: false,
   };
 }
-
 // Xác minh OTP: đúng thì đánh dấu verified và cấp token
 async function verifyEmail({ email, otp }) {
   if (!email || !otp) throw new ApiError(400, 'Thiếu email hoặc mã OTP');
