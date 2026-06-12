@@ -183,7 +183,7 @@ class _ScenarioDetailScreenState extends ConsumerState<ScenarioDetailScreen> {
     final theme = Theme.of(context);
     final cover = s.coverUrl;
     final fullCover = (cover != null && cover.isNotEmpty)
-        ? '${ApiConfig.baseUrl}$cover'
+        ? ApiConfig.imageUrl(cover)
         : null;
 
     return Scaffold(

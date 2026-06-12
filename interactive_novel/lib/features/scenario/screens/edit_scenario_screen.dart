@@ -99,7 +99,7 @@ class _EditScenarioScreenState extends ConsumerState<EditScenarioScreen> {
     final theme = Theme.of(context);
     final oldCover = widget.scenario.coverUrl;
     final fullOldCover = (oldCover != null && oldCover.isNotEmpty)
-        ? '${ApiConfig.baseUrl}$oldCover'
+        ? ApiConfig.imageUrl(oldCover)
         : null;
 
     return Scaffold(

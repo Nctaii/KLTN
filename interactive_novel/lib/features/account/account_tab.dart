@@ -15,7 +15,7 @@ class AccountTab extends ConsumerWidget {
 
     final avatarUrl = user?.avatarUrl;
     final fullAvatarUrl = (avatarUrl != null && avatarUrl.isNotEmpty)
-        ? '${ApiConfig.baseUrl}$avatarUrl'
+        ? ApiConfig.imageUrl(avatarUrl)
         : null;
 
     return Scaffold(

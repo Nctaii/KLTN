@@ -1,3 +1,4 @@
+const { uploadToCloudinary } = require('../../config/cloudinary');
 const asyncHandler = require('../../utils/asyncHandler');
 const svc = require('./user.service');
 
@@ -17,7 +18,8 @@ exports.uploadAvatar = asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Thiếu file ảnh' });
   }
-  const avatarUrl = `/uploads/${req.file.filename}`;
+  // Đẩy ảnh (buffer trong bộ nhớ) lên Cloudinary, nhận URL https đầy đủ
+  const avatarUrl = await uploadToCloudinary(req.file.buffer, 'avatars');
   const profile = await svc.updateAvatar(req.user.id, avatarUrl);
   res.json({ profile });
 });

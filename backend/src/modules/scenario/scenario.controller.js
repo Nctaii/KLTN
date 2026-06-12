@@ -1,5 +1,6 @@
 const asyncHandler = require('../../utils/asyncHandler');
 const svc = require('./scenario.service');
+const { uploadToCloudinary } = require('../../config/cloudinary');
 
 exports.create = asyncHandler(async (req, res) => {
   const story = await svc.createScenario(req.user.id, req.body);
@@ -30,7 +31,8 @@ exports.listMine = asyncHandler(async (req, res) => {
 // POST /scenarios/:id/cover -> upload ảnh bìa
 exports.uploadCover = asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Thiếu file ảnh' });
-  const coverUrl = `/uploads/${req.file.filename}`;
+  // Đẩy buffer lên Cloudinary, nhận URL https đầy đủ
+  const coverUrl = await uploadToCloudinary(req.file.buffer, 'covers');
   const result = await svc.updateCover(req.user.id, req.params.id, coverUrl);
   res.json(result);
 });

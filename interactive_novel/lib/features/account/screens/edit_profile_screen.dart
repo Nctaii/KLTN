@@ -96,7 +96,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     // Dựng URL avatar đầy đủ (server trả đường dẫn tương đối)
     final avatarUrl = user?.avatarUrl;
     final fullAvatarUrl = (avatarUrl != null && avatarUrl.isNotEmpty)
-        ? '${ApiConfig.baseUrl}$avatarUrl'
+        ? ApiConfig.imageUrl(avatarUrl)
         : null;
 
     return Scaffold(

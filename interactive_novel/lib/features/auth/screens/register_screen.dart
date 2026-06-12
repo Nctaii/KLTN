@@ -16,7 +16,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passCtrl = TextEditingController();
   bool _submitting = false;
 
-  // Lỗi riêng cho từng ô
   String? _emailError;
   String? _userError;
   String? _passError;
@@ -30,15 +29,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-    print('>>> ĐÃ BẤM ĐĂNG KÝ, chuẩn bị gọi API');
-    // Xóa lỗi cũ
     setState(() {
       _emailError = null;
       _userError = null;
       _passError = null;
     });
 
-    // Kiểm tra cơ bản phía client trước khi gọi server
     final email = _emailCtrl.text.trim();
     final username = _userCtrl.text.trim();
     final pass = _passCtrl.text;
@@ -67,27 +63,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           .register(email, username, pass);
       if (mounted) {
         if (result.requireVerification) {
-          // Còn yêu cầu xác minh -> sang màn OTP
           Navigator.of(context).pushReplacement(MaterialPageRoute(
             builder: (_) => OtpScreen(email: email),
           ));
         } else {
-          // Không cần xác minh -> báo thành công, quay về đăng nhập
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Đăng ký thành công! Hãy đăng nhập.')),
           );
-          Navigator.of(context).pop(); // về màn đăng nhập
+          Navigator.of(context).pop();
         }
       }
     } catch (e) {
-      // Đặt lỗi vào đúng ô dựa trên field backend trả về
       setState(() {
         if (e is AuthException && e.field == 'email') {
           _emailError = e.message;
         } else if (e is AuthException && e.field == 'username') {
           _userError = e.message;
         } else {
-          // Lỗi không rõ trường -> hiện chung
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Đăng ký thất bại: $e')),
           );
@@ -100,48 +92,95 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Đăng ký')),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          const SizedBox(height: 40),
-          TextField(
-            controller: _emailCtrl,
-            decoration: InputDecoration(
-              labelText: 'Email (phải có thật để nhận mã)',
-              errorText: _emailError, // lỗi hiện ngay dưới ô email
-            ),
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _userCtrl,
-            decoration: InputDecoration(
-              labelText: 'Tên đăng nhập',
-              errorText: _userError,
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _passCtrl,
-            decoration: InputDecoration(
-              labelText: 'Mật khẩu (tối thiểu 6 ký tự)',
-              errorText: _passError,
-            ),
-            obscureText: true,
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 48,
-            child: _submitting
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-                    onPressed: _submit,
-                    child: const Text('Đăng ký'),
+      appBar: AppBar(),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          children: [
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.secondary,
+                    ],
                   ),
-          ),
-        ],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(Icons.person_add_alt_1,
+                    size: 36, color: theme.colorScheme.onPrimary),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text('Tạo tài khoản',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall
+                    ?.copyWith(fontSize: 26, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Text('Bắt đầu hành trình sáng tạo của bạn',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: theme.textTheme.bodySmall?.color)),
+            const SizedBox(height: 32),
+            TextField(
+              controller: _emailCtrl,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                prefixIcon: const Icon(Icons.email_outlined),
+                errorText: _emailError,
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _userCtrl,
+              decoration: InputDecoration(
+                labelText: 'Tên đăng nhập',
+                prefixIcon: const Icon(Icons.person_outline),
+                errorText: _userError,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passCtrl,
+              decoration: InputDecoration(
+                labelText: 'Mật khẩu (tối thiểu 6 ký tự)',
+                prefixIcon: const Icon(Icons.lock_outline),
+                errorText: _passError,
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              height: 52,
+              child: _submitting
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: _submit,
+                      child: const Text('Đăng ký'),
+                    ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Đã có tài khoản?',
+                    style: TextStyle(color: theme.textTheme.bodySmall?.color)),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Đăng nhập'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

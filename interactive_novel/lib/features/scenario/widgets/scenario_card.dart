@@ -12,7 +12,7 @@ class ScenarioCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cover = scenario.coverUrl;
     final fullCover = (cover != null && cover.isNotEmpty)
-        ? '${ApiConfig.baseUrl}$cover'
+        ? ApiConfig.imageUrl(cover)
         : null;
 
     return Padding(
