@@ -38,6 +38,7 @@ class AuthService {
       'password': password,
     });
     final data = _ok(res);
+    print('>>> DATA TỪ BACKEND: $data');
     return RegisterResult(
       AuthUser.fromJson(data['user']),
       (data['message'] ?? 'Đã gửi mã xác minh') as String,

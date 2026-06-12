@@ -8,6 +8,7 @@ exports.register = asyncHandler(async (req, res) => {
   res.status(201).json({
     user: result.user,
     message: result.message,
+    requireVerification: result.requireVerification,
   });
 });
 
