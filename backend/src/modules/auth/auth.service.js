@@ -108,7 +108,7 @@ async function register({ email, username, password }) {
     user = await withTransaction(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO users (email, username, password_hash, is_verified)
-         VALUES ($1, $2, $3, FALSE) RETURNING id, email, username, role, is_verified`,
+         VALUES ($1, $2, $3, $4) RETURNING id, email, username, role, is_verified`,
         [email, username, passwordHash, !REQUIRE_EMAIL_VERIFICATION]
       );
       const u = rows[0];
