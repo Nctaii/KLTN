@@ -18,11 +18,14 @@ class PlayService {
   }
 
   // Bắt đầu chơi -> trả về (sessionId, chương 1)
+  // Bắt đầu chơi -> trả về (sessionId, chương 1)
   Future<({String sessionId, Chapter chapter})> start(
-      String storyId, String? mcName) async {
+      String storyId, String? mcName, [String? personality]) async {
     final res = await _dio.post('/play/start', data: {
       'story_id': storyId,
       if (mcName != null && mcName.isNotEmpty) 'mc_name': mcName,
+      if (personality != null && personality.isNotEmpty)
+        'personality': personality,
     });
     final data = _ok(res);
     return (

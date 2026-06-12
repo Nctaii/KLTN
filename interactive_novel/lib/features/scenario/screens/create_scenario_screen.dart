@@ -39,6 +39,7 @@ class _CreateScenarioScreenState
   final _magicSystem = TextEditingController();
   final List<TextEditingController> _classes = [];
   final List<TextEditingController> _races = [];
+  final List<TextEditingController> _personalities = []; // tính cách cho người chơi chọn
 
   bool _submitting = false;
 
@@ -61,6 +62,7 @@ class _CreateScenarioScreenState
     _magicSystem.dispose();
     for (final c in _classes) c.dispose();
     for (final c in _races) c.dispose();
+    for (final c in _personalities) c.dispose();
   }
 
   void _addCharacter() {
@@ -78,6 +80,8 @@ class _CreateScenarioScreenState
 
   void _addClass() => setState(() => _classes.add(TextEditingController()));
   void _addRace() => setState(() => _races.add(TextEditingController()));
+  void _addPersonality() =>
+      setState(() => _personalities.add(TextEditingController()));
 
   bool get _isFantasy => _genre == 2;
 
@@ -118,6 +122,10 @@ class _CreateScenarioScreenState
                 name: c.name.text.trim(),
                 role: c.role.text.trim(),
               ))
+          .toList(),
+      personalities: _personalities
+          .map((p) => p.text.trim())
+          .where((t) => t.isNotEmpty)
           .toList(),
       cultivationNote: _isXianxia ? _cultivationNote.text.trim() : '',
       realms: _isXianxia
@@ -323,6 +331,45 @@ class _CreateScenarioScreenState
                     ),
                   ],
                 ),
+              ),
+            );
+          }),
+          // Tính cách nhân vật (cho người chơi chọn khi bắt đầu) - mọi thể loại
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Tính cách nhân vật (cho người chơi chọn)'),
+              ),
+              IconButton.filled(
+                onPressed: _addPersonality,
+                icon: const Icon(Icons.add),
+                tooltip: 'Thêm tính cách',
+              ),
+            ],
+          ),
+          ..._personalities.asMap().entries.map((e) {
+            final i = e.key;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: e.value,
+                      decoration: InputDecoration(
+                        labelText: 'Tính cách ${i + 1}',
+                        hintText: 'vd: Chính trực, nhân hậu',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => setState(() {
+                      e.value.dispose();
+                      _personalities.removeAt(i);
+                    }),
+                  ),
+                ],
               ),
             );
           }),

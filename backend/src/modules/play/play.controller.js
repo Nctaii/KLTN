@@ -1,10 +1,10 @@
 const asyncHandler = require('../../utils/asyncHandler');
 const svc = require('./play.service');
 
-// POST /play/start  { story_id, mc_name? }
+// POST /play/start  { story_id, mc_name?, personality? }
 exports.start = asyncHandler(async (req, res) => {
-  const { story_id, mc_name } = req.body;
-  const result = await svc.startPlay(req.user.id, story_id, mc_name);
+  const { story_id, mc_name, personality } = req.body;
+  const result = await svc.startPlay(req.user.id, story_id, mc_name, personality);
   res.status(201).json(result);
 });
 

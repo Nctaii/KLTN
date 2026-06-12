@@ -26,7 +26,6 @@ class Realm {
       };
 }
 
-// Dữ liệu form để gửi lên POST /scenarios
 class ScenarioInput {
   String title;
   String description;
@@ -37,6 +36,7 @@ class ScenarioInput {
   String enemyDescription;
   String finalGoal;
   List<KeyCharacter> keyCharacters;
+  List<String> personalities; // tính cách cho người chơi chọn (mọi thể loại)
   String cultivationNote; // chỉ dùng nếu có tiên hiệp
   List<Realm> realms; // chỉ dùng nếu có tiên hiệp
   String magicSystem; // Fantasy
@@ -53,6 +53,7 @@ class ScenarioInput {
     this.enemyDescription = '',
     this.finalGoal = '',
     this.keyCharacters = const [],
+    this.personalities = const [],
     this.cultivationNote = '',
     this.realms = const [],
     this.magicSystem = '',
@@ -73,8 +74,12 @@ class ScenarioInput {
         'final_goal': finalGoal,
       },
       'key_characters': keyCharacters.map((c) => c.toJson()).toList(),
+      // Tính cách: gửi danh sách {name} (bỏ tên rỗng)
+      'personalities': personalities
+          .where((p) => p.trim().isNotEmpty)
+          .map((p) => {'name': p.trim()})
+          .toList(),
     };
-    // Chỉ thêm phần tiên hiệp nếu thể loại tiên hiệp được chọn (genre_id = 1)
 
     // Phần Fantasy nếu chọn thể loại Fantasy (genre_id = 2)
     if (genreIds.contains(2)) {
@@ -85,7 +90,7 @@ class ScenarioInput {
         'races': races.map((r) => {'name': r}).toList(),
       };
     }
-    
+
     if (genreIds.contains(1)) {
       body['xh'] = {
         'cultivation_note': cultivationNote,

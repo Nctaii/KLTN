@@ -109,4 +109,11 @@ class ScenarioService {
     final res = await _dio.delete('/scenarios/$storyId');
     _ok(res);
   }
+
+  Future<Map<String, dynamic>> getScenarioFull(String storyId) async {
+    final res = await _dio.get('/scenarios/$storyId');
+    final data = _ok(res);
+    // backend trả { scenario: {...} }
+    return (data['scenario'] ?? data) as Map<String, dynamic>;
+  }
 }
