@@ -419,7 +419,7 @@ class HomeTab extends ConsumerWidget {
       ThemeData theme) {
     final cover = s.coverUrl;
     final fullCover = (cover != null && cover.isNotEmpty)
-        ? '${ApiConfig.baseUrl}$cover'
+        ? ApiConfig.imageUrl(cover)
         : null;
     return GestureDetector(
       onTap: () => _openDetail(context, ref, s),
