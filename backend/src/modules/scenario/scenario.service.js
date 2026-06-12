@@ -10,6 +10,7 @@ async function createScenario(authorId, body) {
     genre_ids = [],          // mảng id thể loại (1-2)
     world,                   // { world_setting, protagonist_role, default_mc_name, enemy_description, final_goal }
     key_characters = [],     // [{ name, role, description }]
+    personalities = [],
     xh,                      // { cultivation_note, realms: [{name, tier, description}] }  (nếu tiên hiệp)
     fnt,                     // { magic_system, has_mana, classes: [{name, description, base_mana, base_hp}] }
   } = body;
@@ -100,6 +101,17 @@ async function createScenario(authorId, body) {
       }
     }
 
+    // Tính cách nhân vật (cho người chơi chọn) - áp dụng cho mọi thể loại
+    let pi = 0;
+    for (const p of personalities) {
+      if (!p.name) continue;
+      await client.query(
+        `INSERT INTO scenario_personalities (story_id, name, description, order_index)
+         VALUES ($1, $2, $3, $4)`,
+        [story.id, p.name, p.description || null, pi++]
+      );
+    }
+
     return story;
   });
 }
@@ -113,7 +125,7 @@ async function getScenarioFull(storyId) {
   if (!storyRows[0]) throw new ApiError(404, 'Không tìm thấy scenario');
   const story = storyRows[0];
 
-  const [world, chars, genres, xhConf, realms, fntConf, classes, races] =
+  const [world, chars, genres, xhConf, realms, fntConf, classes, races, personalities] =
     await Promise.all([
       query(`SELECT * FROM scenario_world WHERE story_id = $1`, [storyId]),
       query(
@@ -139,6 +151,11 @@ async function getScenarioFull(storyId) {
         `SELECT * FROM fnt_races WHERE story_id = $1 ORDER BY order_index`,
         [storyId]
       ),
+      query(
+        `SELECT id, name, description FROM scenario_personalities
+         WHERE story_id = $1 ORDER BY order_index`,
+        [storyId]
+      ),
     ]);
 
   return {
@@ -146,6 +163,7 @@ async function getScenarioFull(storyId) {
     genres: genres.rows,
     world: world.rows[0] || null,
     key_characters: chars.rows,
+    personalities: personalities.rows,
     xh: xhConf.rows[0]
       ? { ...xhConf.rows[0], realms: realms.rows }
       : null,

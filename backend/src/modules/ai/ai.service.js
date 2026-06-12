@@ -108,7 +108,7 @@ VÍ DỤ VĂN PHONG MẪU (hãy viết theo đúng giọng văn, nhịp câu và
 }
 
 // Sinh một chương. Trả về { content, options, summary, tokenUsed }
-async function generateChapter({ scenario, mcName, previousChapters, direction, runningSummary }) {
+async function generateChapter({ scenario, mcName, previousChapters, direction, runningSummary, personality }) {
   // Chế độ giả lập: trả ngay, KHÔNG gọi Claude
   if (MOCK_MODE) {
     return mockChapter({ mcName, previousChapters, direction });
@@ -116,11 +116,15 @@ async function generateChapter({ scenario, mcName, previousChapters, direction, 
 
   const worldContext = buildWorldContext(scenario);
   const styleGuide = buildStyleGuide(scenario);
+  const personalityGuide = personality
+    ? `\nTÍNH CÁCH NHÂN VẬT CHÍNH: ${personality}. Hãy thể hiện rõ tính cách này qua hành động, quyết định và lời thoại của nhân vật chính "${mcName}" xuyên suốt câu chuyện.`
+    : '';
   // TỐI ƯU TOKEN #2: system prompt ngắn gọn, không lặp lại mỗi field dài dòng.
   const systemPrompt = `Bạn là người kể chuyện cho tiểu thuyết tương tác nhập vai, viết bằng tiếng Việt, văn phong cuốn hút.
 Mỗi chương khoảng ${CHAPTER_WORDS} từ. Nhân vật chính tên "${mcName}", người đọc nhập vai vào nhân vật này.
 
 ${styleGuide}
+${personalityGuide}
 
 QUY TẮC VẬT PHẨM: Khi một vật phẩm quan trọng xuất hiện lần đầu, giải thích tác dụng ngay sau dấu gạch ngang. Ví dụ: "Tụ Linh Đan - đan dược giúp hồi phục linh lực nhanh chóng" hoặc "Kiếm Hàn Băng - thanh kiếm tỏa hàn khí, chém đứt mọi giáp trụ".
 

@@ -5,7 +5,7 @@ const scenarioService = require('../scenario/scenario.service');
 const aiService = require('../ai/ai.service');
 
 // Bắt đầu một lượt chơi mới: tạo session + nhân vật, AI sinh chương 1
-async function startPlay(userId, storyId, mcNameInput) {
+async function startPlay(userId, storyId, mcNameInput, chosenPersonality) {
   const scenario = await scenarioService.getScenarioFull(storyId);
 
   // Tên nhân vật: ưu tiên người chơi nhập, nếu trống lấy mặc định của scenario
@@ -21,8 +21,9 @@ async function startPlay(userId, storyId, mcNameInput) {
 
   const session = await withTransaction(async (client) => {
     const { rows } = await client.query(
-      `INSERT INTO play_sessions (user_id, story_id) VALUES ($1, $2) RETURNING *`,
-      [userId, storyId]
+      `INSERT INTO play_sessions (user_id, story_id, chosen_personality)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [userId, storyId, (chosenPersonality && chosenPersonality.trim()) || null]
     );
     const s = rows[0];
     await client.query(
@@ -43,6 +44,7 @@ async function startPlay(userId, storyId, mcNameInput) {
     mcName,
     previousChapters: [],
     direction: null,
+    personality: (chosenPersonality && chosenPersonality.trim()) || null,
   });
 
   const chapter = await saveChapter({
@@ -155,6 +157,7 @@ async function continuePlay(userId, sessionId, { option_id, custom_direction }) 
     previousChapters: prev,
     direction,
     runningSummary: session.running_summary || '',
+    personality: session.chosen_personality || null,
   });
 
   const chapter = await saveChapter({
