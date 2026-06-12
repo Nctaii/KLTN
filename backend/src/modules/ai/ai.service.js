@@ -78,15 +78,33 @@ function buildStyleGuide(scenario) {
   + Bậc dưới (đệ tử, vãn bối) khi tự xưng dùng "con", "đệ tử" hoặc "tại hạ"; gọi bậc trên là "sư phụ", "tiền bối".
   + Người kể chuyện gọi nhân vật lớn tuổi/bậc trên là "ông", "lão", "vị" (KHÔNG gọi là "cậu", "anh ấy"). Nhân vật trẻ tuổi mới gọi là "chàng", "nàng", "cậu".
   + Người ngang hàng xưng "ta" gọi "ngươi" hoặc "đạo hữu".
-- Ví dụ đúng: Sư phụ nói với đệ tử: "Ngươi đã sẵn sàng chưa? Ta sẽ truyền cho ngươi tâm pháp." Người kể: "Lão chậm rãi nâng tay."`;
+
+VÍ DỤ VĂN PHONG MẪU (hãy viết theo đúng giọng văn, nhịp câu, cách dùng từ và lối xưng hô như các đoạn dưới đây):
+
+[Tả cảnh, mở đầu]: "Trăng treo lưng chừng núi Thanh Vân, rọi xuống biển mây bạc cuồn cuộn. Lăng Thiên ngồi xếp bằng trên phiến đá lạnh, từ từ vận chuyển linh khí theo chu thiên. Đan điền hắn nóng ran, từng luồng chân khí mảnh như tơ bạc len lỏi qua kinh mạch, chậm rãi ngưng tụ. Một hơi thở, một niệm tịnh — thiên địa linh khí quanh thân khẽ rung động, như có như không. Gió núi lùa qua tán tùng, mang theo hơi sương lạnh buốt, nhưng hắn chẳng mảy may để tâm."
+
+[Hội thoại giữa sư phụ và đệ tử]: "Lão giả áo xanh vuốt chòm râu bạc, ánh mắt sâu thẳm nhìn về phía xa. 'Tu tiên một đường, nghịch thiên mà hành,' ông trầm giọng. 'Ngươi có tư chất, nhưng tâm còn nông nổi. Nhớ kỹ, sai một niệm là vạn kiếp bất phục. Ngươi đã sẵn lòng chưa?' Lăng Thiên chắp tay cúi đầu, giọng cung kính: 'Đệ tử nguyện đi tới cùng, dẫu trước mặt là núi đao biển lửa. Xin sư phụ chỉ giáo.' Lão nhân khẽ gật, trong mắt thoáng một tia tán thưởng."
+
+[Hành động, chiến đấu]: "Kiếm quang lóe lên như một đạo bạch hồng xé toạc màn đêm. Lăng Thiên thân hình lảo đảo, miệng ứa máu tươi, song ánh mắt vẫn sắc như kiếm. Đối diện hắn, ma tu áo đen cười lạnh: 'Tu vi Luyện Khí mà dám đối đầu Trúc Cơ, ngươi không sợ chết sao?' Lăng Thiên lau vệt máu bên khóe miệng, chân khí trong đan điền chợt bùng lên dữ dội. 'Sống chết có số,' hắn quát khẽ, 'nhưng hôm nay, ngươi đừng hòng rời khỏi nơi này!' Dứt lời, trường kiếm trong tay ngưng tụ kiếm ý, đâm thẳng tới trước."
+
+[Nội tâm, cảm xúc]: "Đứng trước mộ phần sư phụ, Lăng Thiên lặng người hồi lâu. Năm xưa lão nhân nhặt hắn về từ khe núi, dạy hắn từng đường kiếm, từng câu khẩu quyết, mà nay chỉ còn nấm đất lạnh phủ rêu xanh. Lòng hắn quặn thắt, nhưng hắn không khóc. Người tu tiên không được để tâm ma trỗi dậy. Hắn quỳ xuống, dập đầu ba cái, thầm khắc cốt ghi tâm: mối thù này, kiếp này tất báo."`;
   }
   if (isFantasy) {
     return `VĂN PHONG FANTASY:
 - Viết bằng tiếng Việt tự nhiên. CHỈ giữ nguyên tiếng Anh cho TÊN RIÊNG (tên người, địa danh, vương quốc), ví dụ "Eldoria", "Arthur". Mọi từ khác phải dịch sang tiếng Việt: viết "áo choàng" (KHÔNG viết "cloak"), "pháp sư" (KHÔNG viết "mage").
 - Giọng văn sử thi phương Tây, phiêu lưu, kỳ ảo.
-- Xưng hô nhất quán theo vai vế: bậc trên/lớn tuổi tự xưng "ta" gọi người dưới "ngươi" hoặc "con"; người kể gọi nhân vật lớn tuổi là "ông", "bà", "lão". Tránh dùng lẫn lộn "tôi"/"cậu" theo lối hiện đại trong lời thoại trang trọng.`;
+- Xưng hô nhất quán theo vai vế: bậc trên/lớn tuổi tự xưng "ta" gọi người dưới "ngươi" hoặc "con"; người kể gọi nhân vật lớn tuổi là "ông", "bà", "lão". Tránh dùng lẫn lộn "tôi"/"cậu" theo lối hiện đại trong lời thoại trang trọng.
+
+VÍ DỤ VĂN PHONG MẪU (hãy viết theo đúng giọng văn, nhịp câu và cách dùng từ như các đoạn dưới đây):
+
+[Tả cảnh, mở đầu]: "Sương mù phủ kín thung lũng Aldermere khi bình minh vừa ló rạng. Elena siết chặt cây trượng gỗ sồi, lần bước theo con đường mòn dẫn lên tu viện cổ. Những tàn tích rêu phong hiện ra trong màn sương, từng phiến đá khắc đầy ký tự cổ đã mờ theo năm tháng. Trong không khí thoảng mùi ẩm mục của lá rừng, và một thứ gì đó khác — hơi lạnh của phép thuật xa xưa còn vương vất, khiến gáy nàng dựng lên."
+
+[Hội thoại với bậc thầy]: "Vị pháp sư già chống trượng bước ra từ bóng tối, đôi mắt ánh lên màu lam kỳ lạ. 'Con đã đi một quãng đường dài, Elena ạ,' ông nói, giọng trầm như tiếng chuông xa. 'Nhưng con đường phía trước còn hiểm trở hơn nhiều. Sức mạnh trong con đang thức tỉnh — và bóng tối cũng đã ngửi thấy nó. Con phải học cách làm chủ nó, trước khi nó làm chủ con.' Elena nuốt khan, nắm tay siết chặt: 'Vậy xin thầy dạy con. Con không sợ.'"
+
+[Hành động, chiến đấu]: "Tiếng gầm của con quái thú vang dội khắp khu rừng Thornwood. Elena lăn người tránh cú vồ, cây trượng trong tay bừng sáng một quầng lửa. 'Lui lại!' nàng hét lớn, đẩy luồng phép thuật về phía trước. Ngọn lửa cuộn xoáy lao đi, nhưng con thú chỉ gầm gừ, lớp da đen sạm của nó nuốt chửng ánh sáng. Tim Elena đập thình thịch. Phép thuật thông thường vô dụng — nàng cần thứ gì đó mạnh hơn, thứ mà thầy nàng từng cảnh báo chớ bao giờ động tới."
+
+[Nội tâm, cảm xúc]: "Đêm ấy, Elena ngồi một mình bên đống lửa tàn, ngắm những tia lửa bay lên hòa vào màn đêm. Nàng nghĩ về ngôi làng đã mất, về gương mặt những người thân giờ chỉ còn trong ký ức. Con đường nàng chọn không có lối quay đầu. Nhưng kỳ lạ thay, giữa nỗi cô đơn ấy, nàng cảm thấy một điều gì đó cứng cỏi đang lớn dần trong lồng ngực — không phải lòng thù hận, mà là quyết tâm. Nàng sẽ mạnh mẽ. Nàng phải mạnh mẽ."`;
   }
-  return '';
 }
 
 // Sinh một chương. Trả về { content, options, summary, tokenUsed }
