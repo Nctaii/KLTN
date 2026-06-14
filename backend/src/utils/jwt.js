@@ -23,9 +23,26 @@ function verifyRefreshToken(token) {
   return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 }
 
+// Token tạm thời 5 phút, dùng để hoàn thành bước 2FA sau khi verify password thành công
+function signTempToken(payload) {
+  return jwt.sign(
+    { ...payload, purpose: '2fa_pending' },
+    process.env.JWT_ACCESS_SECRET,
+    { expiresIn: '5m' }
+  );
+}
+
+function verifyTempToken(token) {
+  const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+  if (payload.purpose !== '2fa_pending') throw new Error('Invalid token purpose');
+  return payload;
+}
+
 module.exports = {
   signAccessToken,
   signRefreshToken,
   verifyAccessToken,
   verifyRefreshToken,
+  signTempToken,
+  verifyTempToken,
 };
