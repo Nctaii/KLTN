@@ -18,7 +18,6 @@ Dio dio(Ref ref) {
   ));
 
   dio.interceptors.add(InterceptorsWrapper(
-    // Gắn access token vào mọi request
     onRequest: (options, handler) async {
       final token = await ref.read(tokenStorageProvider).getAccessToken();
       if (token != null) {
@@ -27,21 +26,16 @@ Dio dio(Ref ref) {
       handler.next(options);
     },
 
-    // Khi gặp 401 (token hết hạn) -> thử refresh rồi gửi lại request
     onResponse: (response, handler) async {
       final isUnauthorized = response.statusCode == 401;
-      final isAuthCall =
-          response.requestOptions.path.startsWith('/auth/');
+      final isAuthCall = response.requestOptions.path.startsWith('/auth/');
 
-      // Chỉ refresh khi: bị 401 VÀ không phải đang gọi chính API auth
       if (isUnauthorized && !isAuthCall) {
         final storage = ref.read(tokenStorageProvider);
         final refreshToken = await storage.getRefreshToken();
 
         if (refreshToken != null) {
           try {
-            // Dùng một Dio "sạch" (không interceptor) để gọi refresh,
-            // tránh vòng lặp vô hạn nếu refresh cũng lỗi
             final plainDio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
             final r = await plainDio.post('/auth/refresh',
                 data: {'refresh_token': refreshToken});
@@ -49,13 +43,11 @@ Dio dio(Ref ref) {
             final newRefresh = r.data['refresh_token'] as String;
             await storage.saveTokens(newAccess, newRefresh);
 
-            // Gửi lại request cũ với token mới
             final opts = response.requestOptions;
             opts.headers['Authorization'] = 'Bearer $newAccess';
             final retry = await dio.fetch(opts);
             return handler.resolve(retry);
           } catch (_) {
-            // Refresh thất bại (refresh token cũng hết hạn) -> xóa token
             await storage.clear();
           }
         }
@@ -73,7 +65,6 @@ TokenStorage tokenStorage(Ref ref) => TokenStorage();
 @riverpod
 AuthService authService(Ref ref) => AuthService(ref.watch(dioProvider));
 
-// Notifier giữ trạng thái phiên đăng nhập: AsyncValue<AuthUser?>
 @riverpod
 class AuthNotifier extends _$AuthNotifier {
   @override
@@ -89,14 +80,10 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
-  // Đăng ký: KHÔNG đăng nhập ngay (chờ xác minh OTP).
-  // Trả về message để màn hình hiển thị; ném lỗi nếu thất bại.
-  Future<RegisterResult> register(
-      String email, String username, String password) async {
+  Future<RegisterResult> register(String email, String username, String password) async {
     return ref.read(authServiceProvider).register(email, username, password);
   }
 
-  // Xác minh OTP -> đăng nhập luôn (cập nhật state thành user)
   Future<void> verifyEmail(String email, String otp) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -110,10 +97,49 @@ class AuthNotifier extends _$AuthNotifier {
     await ref.read(authServiceProvider).resendOtp(email);
   }
 
-  Future<void> login(String email, String password) async {
+  // Trả về LoginRequires2FA nếu 2FA bật, null nếu login thành công, throw nếu lỗi
+  Future<LoginRequires2FA?> login(String email, String password) async {
+    state = const AsyncLoading();
+    try {
+      final result = await ref.read(authServiceProvider).login(email, password);
+      if (result is LoginRequires2FA) {
+        state = const AsyncData(null); // chưa đăng nhập, chờ 2FA
+        return result;
+      }
+      final s = result as LoginSuccess;
+      await ref.read(tokenStorageProvider).saveTokens(s.access, s.refresh);
+      state = AsyncData(await ref.read(authServiceProvider).fetchMe(s.access));
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  // Google OAuth — cùng pattern với login()
+  Future<LoginRequires2FA?> loginWithGoogle() async {
+    state = const AsyncLoading();
+    try {
+      final result = await ref.read(authServiceProvider).loginWithGoogle();
+      if (result is LoginRequires2FA) {
+        state = const AsyncData(null);
+        return result;
+      }
+      final s = result as LoginSuccess;
+      await ref.read(tokenStorageProvider).saveTokens(s.access, s.refresh);
+      state = AsyncData(await ref.read(authServiceProvider).fetchMe(s.access));
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  // Hoàn thành login bước 2 (TOTP)
+  Future<void> completeLogin2FA(String tempToken, String code) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final r = await ref.read(authServiceProvider).login(email, password);
+      final r = await ref.read(authServiceProvider).verify2fa(tempToken, code);
       await ref.read(tokenStorageProvider).saveTokens(r.access, r.refresh);
       return await ref.read(authServiceProvider).fetchMe(r.access);
     });
@@ -128,8 +154,15 @@ class AuthNotifier extends _$AuthNotifier {
     return ref.read(authServiceProvider).forgotPassword(email);
   }
 
-  Future<String> resetPassword(
-      String email, String otp, String newPassword) async {
+  Future<String> resetPassword(String email, String otp, String newPassword) async {
     return ref.read(authServiceProvider).resetPassword(email, otp, newPassword);
+  }
+
+  // Sau khi bật/tắt 2FA, reload user để cập nhật totpEnabled
+  Future<void> reloadUser() async {
+    final storage = ref.read(tokenStorageProvider);
+    final token = await storage.getAccessToken();
+    if (token == null) return;
+    state = AsyncData(await ref.read(authServiceProvider).fetchMe(token));
   }
 }

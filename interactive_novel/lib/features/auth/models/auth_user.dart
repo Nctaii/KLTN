@@ -1,4 +1,3 @@
-// Model người dùng, ánh xạ từ JSON backend trả về
 class AuthUser {
   final String id;
   final String email;
@@ -7,6 +6,7 @@ class AuthUser {
   final bool isVerified;
   final String? displayName;
   final String? avatarUrl;
+  final bool totpEnabled;
 
   AuthUser({
     required this.id,
@@ -16,6 +16,7 @@ class AuthUser {
     required this.isVerified,
     this.displayName,
     this.avatarUrl,
+    this.totpEnabled = false,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
@@ -26,5 +27,6 @@ class AuthUser {
         isVerified: (json['is_verified'] ?? false) as bool,
         displayName: json['display_name'] as String?,
         avatarUrl: json['avatar_url'] as String?,
+        totpEnabled: (json['totp_enabled'] ?? false) as bool,
       );
 }

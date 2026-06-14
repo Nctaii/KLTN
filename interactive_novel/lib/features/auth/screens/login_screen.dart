@@ -5,6 +5,7 @@ import '../data/auth_service.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
 import 'otp_screen.dart';
+import 'totp_verify_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _emailError;
   String? _passError;
   String? _generalError;
+  bool _googleLoading = false;
 
   @override
   void dispose() {
@@ -59,33 +61,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    await ref.read(authNotifierProvider.notifier).login(email, pass);
+    try {
+      final pending = await ref
+          .read(authNotifierProvider.notifier)
+          .login(email, pass);
+
+      if (pending != null && mounted) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => TotpVerifyScreen(
+            tempToken: pending.tempToken,
+            user: pending.user,
+          ),
+        ));
+      }
+    } on AuthException catch (e) {
+      if (e.statusCode == 403 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tài khoản chưa xác minh, mời nhập mã')),
+        );
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => OtpScreen(email: email),
+        ));
+      } else if (e.statusCode == 401) {
+        setState(() => _generalError = 'Email hoặc mật khẩu chưa đúng');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đăng nhập thất bại: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      // lỗi khác (network, v.v.)
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _googleLoading = true;
+      _generalError = null;
+    });
+    try {
+      final pending = await ref
+          .read(authNotifierProvider.notifier)
+          .loginWithGoogle();
+
+      if (pending != null && mounted) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => TotpVerifyScreen(
+            tempToken: pending.tempToken,
+            user: pending.user,
+          ),
+        ));
+      }
+    } on AuthException catch (e) {
+      if (e.statusCode != 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+      // statusCode == 0 nghĩa là user tự hủy → không cần thông báo
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi Google đăng nhập: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final theme = Theme.of(context);
-
-    ref.listen(authNotifierProvider, (prev, next) {
-      if (next.hasError && !next.isLoading) {
-        final err = next.error;
-        if (err is AuthException && err.statusCode == 403) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tài khoản chưa xác minh, mời nhập mã')),
-          );
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => OtpScreen(email: _emailCtrl.text.trim()),
-          ));
-        } else if (err is AuthException && err.statusCode == 401) {
-          setState(() => _generalError = 'Email hoặc mật khẩu chưa đúng');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đăng nhập thất bại: $err')),
-          );
-        }
-      }
-    });
+    final isLoading = authState.isLoading && !_googleLoading;
 
     return Scaffold(
       body: SafeArea(
@@ -93,7 +142,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 28),
           children: [
             const SizedBox(height: 60),
-            // Logo / biểu tượng thương hiệu
             Center(
               child: Container(
                 width: 88,
@@ -148,15 +196,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 if (_passError != null) setState(() => _passError = null);
               },
             ),
-            // Quên mật khẩu căn phải
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const ForgotPasswordScreen(),
-                  ));
-                },
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const ForgotPasswordScreen(),
+                )),
                 child: const Text('Quên mật khẩu?'),
               ),
             ),
@@ -171,8 +216,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline,
-                          size: 18, color: Colors.red.shade400),
+                      Icon(Icons.error_outline, size: 18, color: Colors.red.shade400),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(_generalError!,
@@ -187,7 +231,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 8),
             SizedBox(
               height: 52,
-              child: authState.isLoading
+              child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _submit,
@@ -195,7 +239,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
             ),
             const SizedBox(height: 20),
-            // Dòng phân cách
             Row(
               children: [
                 Expanded(child: Divider(color: theme.dividerColor)),
@@ -203,11 +246,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text('hoặc',
                       style: TextStyle(
-                          color: theme.textTheme.bodySmall?.color,
-                          fontSize: 13)),
+                          color: theme.textTheme.bodySmall?.color, fontSize: 13)),
                 ),
                 Expanded(child: Divider(color: theme.dividerColor)),
               ],
+            ),
+            const SizedBox(height: 20),
+            // Nút đăng nhập Google
+            SizedBox(
+              height: 52,
+              child: _googleLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : OutlinedButton.icon(
+                      onPressed: _loginWithGoogle,
+                      icon: Image.network(
+                        'https://www.google.com/favicon.ico',
+                        width: 20,
+                        height: 20,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.g_mobiledata, size: 22),
+                      ),
+                      label: const Text('Đăng nhập với Google'),
+                    ),
             ),
             const SizedBox(height: 20),
             Row(
@@ -216,11 +276,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Text('Chưa có tài khoản?',
                     style: TextStyle(color: theme.textTheme.bodySmall?.color)),
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const RegisterScreen(),
-                    ));
-                  },
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const RegisterScreen(),
+                  )),
                   child: const Text('Đăng ký ngay'),
                 ),
               ],

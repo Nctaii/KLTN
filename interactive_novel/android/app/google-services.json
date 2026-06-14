@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "690559386948",
+    "project_id": "kltn-499416",
+    "storage_bucket": "kltn-499416.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:690559386948:android:fe7c82d1fb1de1b0c74311",
+        "android_client_info": {
+          "package_name": "com.example.interactive_novel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "690559386948-buq28okb1c4tgheo98gb899ghad0ua1l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4_MFVp72maFZpKu_81TSM9-xeYO2Yj8M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "690559386948-buq28okb1c4tgheo98gb899ghad0ua1l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
