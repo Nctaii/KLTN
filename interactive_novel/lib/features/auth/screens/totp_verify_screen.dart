@@ -4,8 +4,6 @@ import '../data/auth_service.dart';
 import '../models/auth_user.dart';
 import '../providers/auth_provider.dart';
 
-// Màn hình nhập TOTP khi login — xuất hiện sau khi xác thực email/password thành công
-// nhưng tài khoản đang bật 2FA
 class TotpVerifyScreen extends ConsumerStatefulWidget {
   final String tempToken;
   final AuthUser user;
@@ -22,6 +20,7 @@ class TotpVerifyScreen extends ConsumerStatefulWidget {
 
 class _TotpVerifyScreenState extends ConsumerState<TotpVerifyScreen> {
   final _codeCtrl = TextEditingController();
+  bool _loading = false;
   String? _error;
 
   @override
@@ -36,29 +35,29 @@ class _TotpVerifyScreenState extends ConsumerState<TotpVerifyScreen> {
       setState(() => _error = 'Mã gồm 6 chữ số');
       return;
     }
-    setState(() => _error = null);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
-    await ref
-        .read(authNotifierProvider.notifier)
-        .completeLogin2FA(widget.tempToken, code);
+    try {
+      await ref
+          .read(authNotifierProvider.notifier)
+          .completeLogin2FA(widget.tempToken, code);
+      // Thành công: auth state đã là AsyncData(user), pop về AuthGate (MainShell)
+      if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Lỗi: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
     final theme = Theme.of(context);
-
-    // Khi login 2FA thành công, authState.valueOrNull != null → điều hướng về home
-    // được xử lý bởi router ở màn hình cha, không cần push ở đây
-
-    ref.listen(authNotifierProvider, (_, next) {
-      if (next.hasError) {
-        final err = next.error;
-        setState(() {
-          _error = err is AuthException ? err.message : err.toString();
-        });
-      }
-    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Xác thực 2 bước')),
@@ -117,7 +116,7 @@ class _TotpVerifyScreenState extends ConsumerState<TotpVerifyScreen> {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: authState.isLoading
+              child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _submit,

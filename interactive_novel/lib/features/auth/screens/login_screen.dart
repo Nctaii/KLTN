@@ -20,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _emailError;
   String? _passError;
   String? _generalError;
+  bool _loading = false;
   bool _googleLoading = false;
 
   @override
@@ -61,12 +62,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
+    setState(() => _loading = true);
     try {
       final pending = await ref
           .read(authNotifierProvider.notifier)
           .login(email, pass);
 
-      if (pending != null && mounted) {
+      if (!mounted) return;
+      if (pending != null) {
         Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => TotpVerifyScreen(
             tempToken: pending.tempToken,
@@ -75,7 +78,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ));
       }
     } on AuthException catch (e) {
-      if (e.statusCode == 403 && mounted) {
+      if (!mounted) return;
+      if (e.statusCode == 403) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tài khoản chưa xác minh, mời nhập mã')),
         );
@@ -85,12 +89,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (e.statusCode == 401) {
         setState(() => _generalError = 'Email hoặc mật khẩu chưa đúng');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đăng nhập thất bại: ${e.message}')),
-        );
+        setState(() => _generalError = 'Lỗi: ${e.message}');
       }
     } catch (e) {
-      // lỗi khác (network, v.v.)
+      if (mounted) setState(() => _generalError = 'Lỗi kết nối: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -132,9 +136,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
+    ref.watch(authNotifierProvider); // watch để rebuild khi login thành công
     final theme = Theme.of(context);
-    final isLoading = authState.isLoading && !_googleLoading;
 
     return Scaffold(
       body: SafeArea(
@@ -231,7 +234,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 8),
             SizedBox(
               height: 52,
-              child: isLoading
+              child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _submit,

@@ -97,52 +97,42 @@ class AuthNotifier extends _$AuthNotifier {
     await ref.read(authServiceProvider).resendOtp(email);
   }
 
-  // Trả về LoginRequires2FA nếu 2FA bật, null nếu login thành công, throw nếu lỗi
+  // Trả về LoginRequires2FA nếu 2FA bật, null nếu login thành công, throw nếu lỗi.
+  // KHÔNG đổi state = AsyncLoading ở đây vì AuthGate sẽ unmount LoginScreen,
+  // khiến mounted = false và không push được TotpVerifyScreen.
+  // LoginScreen tự quản lý loading state cục bộ.
   Future<LoginRequires2FA?> login(String email, String password) async {
-    state = const AsyncLoading();
     try {
       final result = await ref.read(authServiceProvider).login(email, password);
-      if (result is LoginRequires2FA) {
-        state = const AsyncData(null); // chưa đăng nhập, chờ 2FA
-        return result;
-      }
+      if (result is LoginRequires2FA) return result;
       final s = result as LoginSuccess;
       await ref.read(tokenStorageProvider).saveTokens(s.access, s.refresh);
       state = AsyncData(await ref.read(authServiceProvider).fetchMe(s.access));
       return null;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    } catch (e) {
       rethrow;
     }
   }
 
   // Google OAuth — cùng pattern với login()
   Future<LoginRequires2FA?> loginWithGoogle() async {
-    state = const AsyncLoading();
     try {
       final result = await ref.read(authServiceProvider).loginWithGoogle();
-      if (result is LoginRequires2FA) {
-        state = const AsyncData(null);
-        return result;
-      }
+      if (result is LoginRequires2FA) return result;
       final s = result as LoginSuccess;
       await ref.read(tokenStorageProvider).saveTokens(s.access, s.refresh);
       state = AsyncData(await ref.read(authServiceProvider).fetchMe(s.access));
       return null;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    } catch (e) {
       rethrow;
     }
   }
 
-  // Hoàn thành login bước 2 (TOTP)
+  // Hoàn thành login bước 2 (TOTP) — không set AsyncLoading, screen tự quản lý loading
   Future<void> completeLogin2FA(String tempToken, String code) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      final r = await ref.read(authServiceProvider).verify2fa(tempToken, code);
-      await ref.read(tokenStorageProvider).saveTokens(r.access, r.refresh);
-      return await ref.read(authServiceProvider).fetchMe(r.access);
-    });
+    final r = await ref.read(authServiceProvider).verify2fa(tempToken, code);
+    await ref.read(tokenStorageProvider).saveTokens(r.access, r.refresh);
+    state = AsyncData(await ref.read(authServiceProvider).fetchMe(r.access));
   }
 
   Future<void> logout() async {
