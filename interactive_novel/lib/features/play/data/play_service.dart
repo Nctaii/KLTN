@@ -17,9 +17,8 @@ class PlayService {
     throw Exception(msg);
   }
 
-  // Bắt đầu chơi -> trả về (sessionId, chương 1)
-  // Bắt đầu chơi -> trả về (sessionId, chương 1)
-  Future<({String sessionId, Chapter chapter})> start(
+  // Bắt đầu chơi -> trả về (sessionId, kết quả chương kèm trạng thái chiến đấu)
+  Future<({String sessionId, ChapterResult result})> start(
       String storyId, String? mcName, [String? personality]) async {
     final res = await _dio.post('/play/start', data: {
       'story_id': storyId,
@@ -30,19 +29,38 @@ class PlayService {
     final data = _ok(res);
     return (
       sessionId: data['session_id'].toString(),
-      chapter: Chapter.fromJson(data['chapter']),
+      result: _parseResult(data),
     );
   }
 
-  // Chơi tiếp: chọn option hoặc tự viết hướng đi -> trả chương mới
-  Future<Chapter> continuePlay(
-      String sessionId, {String? optionId, String? customDirection}) async {
+  // Chơi tiếp: chọn option, tự viết hướng đi, hoặc chọn chiêu (khi chiến đấu)
+  Future<ChapterResult> continuePlay(
+      String sessionId,
+      {String? optionId, String? customDirection, String? skillName, String? plotChoiceId}) async {
     final res = await _dio.post('/play/$sessionId/continue', data: {
       if (optionId != null) 'option_id': optionId,
       if (customDirection != null) 'custom_direction': customDirection,
+      if (skillName != null) 'skill_name': skillName,
+      if (plotChoiceId != null) 'plot_choice_id': plotChoiceId,
     });
     final data = _ok(res);
-    return Chapter.fromJson(data['chapter']);
+    return _parseResult(data);
+  }
+
+  // Bóc tách kết quả chung (chương + mode + combat_info + skills + nút thắt)
+  ChapterResult _parseResult(Map<String, dynamic> data) {
+    return ChapterResult(
+      chapter: Chapter.fromJson(data['chapter']),
+      mode: (data['mode'] as String?) ?? 'normal',
+      combatInfo: (data['combat_info'] as String?) ?? '',
+      skills: ((data['skills'] as List?) ?? [])
+          .map((s) => Skill.fromJson(s as Map<String, dynamic>))
+          .toList(),
+      atPlotPoint: data['at_plot_point'] == true,
+      plotPoint: data['plot_point'] != null
+          ? PlotPointLive.fromJson(data['plot_point'] as Map<String, dynamic>)
+          : null,
+    );
   }
 
   // Lấy danh sách lượt chơi của tôi
@@ -56,13 +74,17 @@ class PlayService {
   }
 
   // Đọc lại toàn bộ chương của một lượt chơi (để chơi tiếp)
-  Future<List<Chapter>> getPlaythrough(String sessionId) async {
+  Future<({List<Chapter> chapters, List<Skill> skills})> getPlaythrough(
+      String sessionId) async {
     final res = await _dio.get('/play/$sessionId');
     final data = _ok(res);
     final list = (data['chapters'] as List?) ?? [];
-    return list
-        .map((e) => Chapter.fromJson(e as Map<String, dynamic>))
+    final chapters =
+        list.map((e) => Chapter.fromJson(e as Map<String, dynamic>)).toList();
+    final skills = ((data['skills'] as List?) ?? [])
+        .map((s) => Skill.fromJson(s as Map<String, dynamic>))
         .toList();
+    return (chapters: chapters, skills: skills);
   }
 
   // Xóa các lượt chơi của scenario này

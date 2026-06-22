@@ -25,6 +25,68 @@ class ScenarioService {
     return data['scenario']['id'].toString();
   }
 
+  // Nhờ AI gợi ý các lựa chọn cho một nút thắt (trợ lý sáng tác)
+  // Trả về list PlotChoice
+  // Nhờ AI sinh cả một bộ nút thắt (count nút) cho kịch bản
+  Future<List<PlotPoint>> suggestPlotPoints({
+    required int count,
+    String? title,
+    Map<String, dynamic>? world,
+    Map<String, dynamic>? xh,
+    Map<String, dynamic>? fnt,
+    List<int>? genreIds,
+  }) async {
+    final res = await _dio.post('/scenarios/suggest-plot-points', data: {
+      'count': count,
+      if (title != null) 'title': title,
+      if (world != null) 'world': world,
+      if (xh != null) 'xh': xh,
+      if (fnt != null) 'fnt': fnt,
+      if (genreIds != null) 'genre_ids': genreIds,
+    });
+    final data = _ok(res);
+    final list = (data['plot_points'] as List?) ?? [];
+    return list.map((pp) {
+      final choices = ((pp['choices'] as List?) ?? [])
+          .map((c) => PlotChoice(
+                label: (c['label'] ?? '').toString(),
+                branchHint: c['branch_hint'] as String?,
+              ))
+          .toList();
+      return PlotPoint(
+        title: (pp['title'] ?? '').toString(),
+        description: (pp['description'] ?? '').toString(),
+        choices: choices,
+      );
+    }).toList();
+  }
+
+  Future<List<PlotChoice>> suggestPlotChoices({
+    required String plotTitle,
+    String? plotDescription,
+    Map<String, dynamic>? world,
+    Map<String, dynamic>? xh,
+    Map<String, dynamic>? fnt,
+    List<int>? genreIds,
+  }) async {
+    final res = await _dio.post('/scenarios/suggest-plot-choices', data: {
+      'plot_title': plotTitle,
+      if (plotDescription != null) 'plot_description': plotDescription,
+      if (world != null) 'world': world,
+      if (xh != null) 'xh': xh,
+      if (fnt != null) 'fnt': fnt,
+      if (genreIds != null) 'genre_ids': genreIds,
+    });
+    final data = _ok(res);
+    final list = (data['choices'] as List?) ?? [];
+    return list
+        .map((c) => PlotChoice(
+              label: (c['label'] ?? '').toString(),
+              branchHint: c['branch_hint'] as String?,
+            ))
+        .toList();
+  }
+
   // Lấy danh sách scenario đã publish
   Future<List<ScenarioSummary>> listPublished() async {
     final res = await _dio.get('/scenarios');
@@ -115,5 +177,11 @@ class ScenarioService {
     final data = _ok(res);
     // backend trả { scenario: {...} }
     return (data['scenario'] ?? data) as Map<String, dynamic>;
+  }
+
+  // Cập nhật toàn bộ cấu hình scenario (đồng bộ thêm/sửa/xóa, giữ id)
+  Future<void> updateFull(String storyId, Map<String, dynamic> body) async {
+    final res = await _dio.put('/scenarios/$storyId/full', data: body);
+    _ok(res);
   }
 }

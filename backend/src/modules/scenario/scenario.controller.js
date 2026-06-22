@@ -1,5 +1,6 @@
 const asyncHandler = require('../../utils/asyncHandler');
 const svc = require('./scenario.service');
+const aiSvc = require('../ai/ai.service');
 const { uploadToCloudinary } = require('../../config/cloudinary');
 
 exports.create = asyncHandler(async (req, res) => {
@@ -50,4 +51,50 @@ exports.update = asyncHandler(async (req, res) => {
     description: req.body.description,
   });
   res.json({ scenario: result });
+});
+
+// PUT /scenarios/:id/full -> cập nhật toàn bộ cấu hình scenario (đồng bộ)
+exports.updateFull = asyncHandler(async (req, res) => {
+  const result = await svc.updateScenarioFull(req.user.id, req.params.id, req.body);
+  res.json({ scenario: result });
+});
+
+// POST /scenarios/suggest-plot-choices -> AI gợi ý lựa chọn cho một nút thắt
+// Body: { plot_title, plot_description, world } (world: bối cảnh đang nhập, tùy chọn)
+// POST /scenarios/suggest-plot-points -> AI sinh cả bộ nút thắt
+exports.suggestPlotPoints = asyncHandler(async (req, res) => {
+  const { count, world, xh, fnt, genre_ids, title } = req.body;
+  const tempScenario = {
+    title: title || 'Kịch bản',
+    genres: (genre_ids || []).map((id) => ({ id })),
+    world: world || null,
+    xh: xh || null,
+    fnt: fnt || null,
+    key_characters: [],
+  };
+  const plotPoints = await aiSvc.suggestPlotPoints({
+    scenario: tempScenario,
+    count: count || 3,
+  });
+  res.json({ plot_points: plotPoints });
+});
+
+exports.suggestPlotChoices = asyncHandler(async (req, res) => {
+  const { plot_title, plot_description, world, xh, fnt, genre_ids } = req.body;
+  if (!plot_title) return res.status(400).json({ error: 'Thiếu tiêu đề nút thắt' });
+  // Dựng một object scenario tạm từ dữ liệu tác giả đang nhập để AI có bối cảnh
+  const tempScenario = {
+    title: req.body.title || 'Kịch bản',
+    genres: (genre_ids || []).map((id) => ({ id })),
+    world: world || null,
+    xh: xh || null,
+    fnt: fnt || null,
+    key_characters: [],
+  };
+  const choices = await aiSvc.suggestPlotChoices({
+    scenario: tempScenario,
+    plotTitle: plot_title,
+    plotDescription: plot_description,
+  });
+  res.json({ choices });
 });

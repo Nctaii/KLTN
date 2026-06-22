@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/scenario.dart';
 import '../providers/scenario_provider.dart';
+import 'plot_points_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -36,6 +37,14 @@ class _CreateScenarioScreenState
   // Danh sách cảnh giới (động, chỉ dùng cho tiên hiệp)
   final List<TextEditingController> _realms = [];
 
+  // Tiên hiệp: linh căn NV chính, tông môn, công pháp
+  final _mcSpiritRoot = TextEditingController();
+  final List<_SectInput> _sects = []; // tông môn: tên + phe (chinh/ta)
+  final List<TextEditingController> _techniques = [];
+
+  // Nút thắt cốt truyện (mọi thể loại) - quản lý ở trang riêng
+  final List<PlotPointData> _plotPoints = [];
+
   final _magicSystem = TextEditingController();
   final List<TextEditingController> _classes = [];
   final List<TextEditingController> _races = [];
@@ -58,6 +67,13 @@ class _CreateScenarioScreenState
     for (final c in _realms) {
       c.dispose();
     }
+    _mcSpiritRoot.dispose();
+    for (final s in _sects) {
+      s.name.dispose();
+    }
+    for (final c in _techniques) {
+      c.dispose();
+    }
     super.dispose();
     _magicSystem.dispose();
     for (final c in _classes) c.dispose();
@@ -76,6 +92,43 @@ class _CreateScenarioScreenState
 
   void _addRealm() {
     setState(() => _realms.add(TextEditingController()));
+  }
+
+  void _addSect() =>
+      setState(() => _sects.add(_SectInput(TextEditingController(), 'chinh')));
+  void _addTechnique() =>
+      setState(() => _techniques.add(TextEditingController()));
+
+  // Mở trang quản lý nút thắt riêng, nhận kết quả trả về
+  Future<void> _openPlotPoints() async {
+    final result = await Navigator.of(context).push<List<PlotPointData>>(
+      MaterialPageRoute(
+        builder: (_) => PlotPointsScreen(
+          initial: _plotPoints,
+          genre: _genre,
+          title: _title.text.trim(),
+          world: {
+            'world_setting': _worldSetting.text.trim(),
+            'protagonist_role': _protagonist.text.trim(),
+            'enemy_description': _enemy.text.trim(),
+            'final_goal': _goal.text.trim(),
+          },
+          xh: _isXianxia
+              ? {
+                  'cultivation_note': _cultivationNote.text.trim(),
+                  'mc_spirit_root': _mcSpiritRoot.text.trim(),
+                }
+              : null,
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _plotPoints
+          ..clear()
+          ..addAll(result);
+      });
+    }
   }
 
   void _addClass() => setState(() => _classes.add(TextEditingController()));
@@ -128,6 +181,20 @@ class _CreateScenarioScreenState
           .where((t) => t.isNotEmpty)
           .toList(),
       cultivationNote: _isXianxia ? _cultivationNote.text.trim() : '',
+      mcSpiritRoot: _isXianxia ? _mcSpiritRoot.text.trim() : '',
+      sects: _isXianxia
+          ? _sects
+              .where((s) => s.name.text.trim().isNotEmpty)
+              .map((s) => Sect(name: s.name.text.trim(), faction: s.faction))
+              .toList()
+          : [],
+      techniques: _isXianxia
+          ? _techniques
+              .map((t) => t.text.trim())
+              .where((t) => t.isNotEmpty)
+              .map((t) => Technique(name: t))
+              .toList()
+          : [],
       realms: _isXianxia
           ? _realms
               .where((r) => r.text.trim().isNotEmpty)
@@ -144,6 +211,19 @@ class _CreateScenarioScreenState
       races: _isFantasy
           ? _races.map((r) => r.text.trim()).where((t) => t.isNotEmpty).toList()
           : [],
+      plotPoints: _plotPoints
+          .where((pp) => pp.title.trim().isNotEmpty)
+          .map((pp) => PlotPoint(
+                title: pp.title.trim(),
+                description: pp.description.trim(),
+                minChapters: pp.minChapters,
+                choices: pp.choices
+                    .map((c) => c.label.trim())
+                    .where((t) => t.isNotEmpty)
+                    .map((t) => PlotChoice(label: t))
+                    .toList(),
+              ))
+          .toList(),
     );
 
     try {
@@ -184,6 +264,8 @@ class _CreateScenarioScreenState
             controller: _title,
             decoration: const InputDecoration(labelText: 'Tên scenario *'),
           ),
+
+          const SizedBox(height: 12),
           // Khu chọn ảnh bìa
           GestureDetector(
             onTap: _pickCover,
@@ -375,6 +457,25 @@ class _CreateScenarioScreenState
           }),
           const SizedBox(height: 20),
 
+          // Nút thắt cốt truyện (mọi thể loại) - mở trang riêng
+          _label('Nút thắt cốt truyện'),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Các cột mốc quan trọng dẫn dắt câu chuyện. Quản lý ở trang riêng (có thể nhờ AI sinh).',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: _openPlotPoints,
+            icon: const Icon(Icons.account_tree_outlined),
+            label: Text('Quản lý nút thắt (${_plotPoints.length})'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // Phần tiên hiệp: chỉ hiện khi chọn thể loại Tiên hiệp
           if (_isXianxia) ...[
             _label('Hệ thống tu luyện (Tiên hiệp)'),
@@ -415,6 +516,106 @@ class _CreateScenarioScreenState
                       onPressed: () => setState(() {
                         e.value.dispose();
                         _realms.removeAt(i);
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+
+            // Linh căn / thể chất nhân vật chính
+            _label('Linh căn / thể chất nhân vật chính'),
+            TextField(
+              controller: _mcSpiritRoot,
+              decoration: const InputDecoration(
+                labelText: 'VD: Ngũ hành tạp linh căn, Thiên linh căn hệ Hỏa...',
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+
+            // Tông môn (chính phái + tà phái)
+            Row(
+              children: [
+                const Expanded(child: Text('Tông môn (chính phái / tà phái)')),
+                IconButton.filled(
+                  onPressed: _addSect,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Thêm tông môn',
+                ),
+              ],
+            ),
+            ..._sects.asMap().entries.map((e) {
+              final i = e.key;
+              final sect = e.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        controller: sect.name,
+                        decoration: InputDecoration(
+                          labelText: 'Tên tông môn ${i + 1}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    DropdownButton<String>(
+                      value: sect.faction,
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'chinh', child: Text('Chính phái')),
+                        DropdownMenuItem(value: 'ta', child: Text('Tà phái')),
+                      ],
+                      onChanged: (v) =>
+                          setState(() => sect.faction = v ?? 'chinh'),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => setState(() {
+                        sect.name.dispose();
+                        _sects.removeAt(i);
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+
+            // Công pháp đặc trưng
+            Row(
+              children: [
+                const Expanded(child: Text('Công pháp đặc trưng')),
+                IconButton.filled(
+                  onPressed: _addTechnique,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Thêm công pháp',
+                ),
+              ],
+            ),
+            ..._techniques.asMap().entries.map((e) {
+              final i = e.key;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: e.value,
+                        decoration: InputDecoration(
+                          labelText: 'Công pháp ${i + 1}',
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => setState(() {
+                        e.value.dispose();
+                        _techniques.removeAt(i);
                       }),
                     ),
                   ],
@@ -527,4 +728,10 @@ class _CreateScenarioScreenState
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
       );
+}
+// Dữ liệu nhập cho một tông môn (tên + phe), dùng trong màn tạo scenario
+class _SectInput {
+  final TextEditingController name;
+  String faction; // 'chinh' hoặc 'ta'
+  _SectInput(this.name, this.faction);
 }

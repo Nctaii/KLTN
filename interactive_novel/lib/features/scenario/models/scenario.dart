@@ -26,6 +26,96 @@ class Realm {
       };
 }
 
+// Tông môn (chính phái / tà phái)
+class Sect {
+  final String name;
+  final String faction; // 'chinh' hoặc 'ta'
+  final String? description;
+  final String? standing;
+  Sect({
+    required this.name,
+    this.faction = 'chinh',
+    this.description,
+    this.standing,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'faction': faction,
+        if (description != null) 'description': description,
+        if (standing != null) 'standing': standing,
+      };
+}
+
+// Công pháp đặc trưng
+class Technique {
+  final String name;
+  final String? description;
+  final String? specialty;
+  Technique({required this.name, this.description, this.specialty});
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        if (description != null) 'description': description,
+        if (specialty != null) 'specialty': specialty,
+      };
+}
+
+// Một lựa chọn tại nút thắt
+class PlotChoice {
+  final String label;
+  final String? branchHint;
+  PlotChoice({required this.label, this.branchHint});
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        if (branchHint != null) 'branch_hint': branchHint,
+      };
+}
+
+// Nút thắt cốt truyện
+class PlotPoint {
+  final String title;
+  final String? description;
+  final int minChapters;
+  final List<PlotChoice> choices;
+  PlotPoint({
+    required this.title,
+    this.description,
+    this.minChapters = 2,
+    this.choices = const [],
+  });
+
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        if (description != null) 'description': description,
+        'min_chapters': minChapters,
+        'choices': choices.map((c) => c.toJson()).toList(),
+      };
+}
+
+// Dữ liệu nút thắt dạng mutable, mang id (truyền giữa màn tạo/sửa và trang quản lý nút thắt)
+class PlotPointData {
+  int? id;
+  String title;
+  String description;
+  int minChapters;
+  List<PlotChoiceData> choices;
+  PlotPointData({
+    this.id,
+    this.title = '',
+    this.description = '',
+    this.minChapters = 2,
+    List<PlotChoiceData>? choices,
+  }) : choices = choices ?? [];
+}
+
+class PlotChoiceData {
+  int? id;
+  String label;
+  PlotChoiceData({this.id, this.label = ''});
+}
+
 class ScenarioInput {
   String title;
   String description;
@@ -39,9 +129,13 @@ class ScenarioInput {
   List<String> personalities; // tính cách cho người chơi chọn (mọi thể loại)
   String cultivationNote; // chỉ dùng nếu có tiên hiệp
   List<Realm> realms; // chỉ dùng nếu có tiên hiệp
+  String mcSpiritRoot; // tiên hiệp: linh căn/thể chất NV chính
+  List<Sect> sects; // tiên hiệp: tông môn chính phái + tà phái
+  List<Technique> techniques; // tiên hiệp: công pháp đặc trưng
   String magicSystem; // Fantasy
   List<String> classes; // Fantasy: tên các lớp
   List<String> races; // Fantasy: tên các chủng tộc
+  List<PlotPoint> plotPoints; // nút thắt cốt truyện (mọi thể loại)
 
   ScenarioInput({
     this.title = '',
@@ -56,9 +150,13 @@ class ScenarioInput {
     this.personalities = const [],
     this.cultivationNote = '',
     this.realms = const [],
+    this.mcSpiritRoot = '',
+    this.sects = const [],
+    this.techniques = const [],
     this.magicSystem = '',
     this.classes = const [],
     this.races = const [],
+    this.plotPoints = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -79,6 +177,8 @@ class ScenarioInput {
           .where((p) => p.trim().isNotEmpty)
           .map((p) => {'name': p.trim()})
           .toList(),
+      // Nút thắt cốt truyện (mọi thể loại)
+      'plot_points': plotPoints.map((pp) => pp.toJson()).toList(),
     };
 
     // Phần Fantasy nếu chọn thể loại Fantasy (genre_id = 2)
@@ -94,7 +194,10 @@ class ScenarioInput {
     if (genreIds.contains(1)) {
       body['xh'] = {
         'cultivation_note': cultivationNote,
+        'mc_spirit_root': mcSpiritRoot,
         'realms': realms.map((r) => r.toJson()).toList(),
+        'sects': sects.map((s) => s.toJson()).toList(),
+        'techniques': techniques.map((t) => t.toJson()).toList(),
       };
     }
     return body;

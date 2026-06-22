@@ -33,6 +33,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   String? _error;
   int _currentPage = 0;
 
+  // Trạng thái chiến đấu
+  String _mode = 'normal'; // 'normal' | 'combat'
+  String _combatInfo = '';
+  List<Skill> _skills = [];
+
+  // Nút thắt cốt truyện đang diễn ra (nếu có)
+  PlotPointLive? _plotPoint;
+  bool get _atPlotPoint => _plotPoint != null;
+
+  bool get _isCombat => _mode == 'combat';
+
   @override
   void initState() {
     super.initState();
@@ -65,7 +76,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           .start(widget.storyId, widget.mcName, widget.personality);
       setState(() {
         _sessionId = r.sessionId;
-        _chapters.add(r.chapter);
+        _chapters.add(r.result.chapter);
+        _mode = r.result.mode;
+        _combatInfo = r.result.combatInfo;
+        _skills = r.result.skills;
+        _plotPoint = r.result.plotPoint;
         _loading = false;
       });
     } catch (e) {
@@ -82,12 +97,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _error = null;
     });
     try {
-      final chapters = await ref
+      final data = await ref
           .read(playServiceProvider)
           .getPlaythrough(widget.existingSessionId!);
       setState(() {
         _sessionId = widget.existingSessionId;
-        _chapters.addAll(chapters);
+        _chapters.addAll(data.chapters);
+        _skills = data.skills;
+        // Khôi phục trạng thái chiến đấu từ chương cuối
+        if (data.chapters.isNotEmpty) {
+          _mode = data.chapters.last.mode;
+        }
         _loading = false;
       });
       await Future.delayed(const Duration(milliseconds: 100));
@@ -102,16 +122,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
   }
 
-  Future<void> _continue({String? optionId, String? custom}) async {
+  Future<void> _continue({String? optionId, String? custom, String? skillName, String? plotChoiceId}) async {
     setState(() => _loading = true);
     try {
-      final chapter = await ref.read(playServiceProvider).continuePlay(
+      final r = await ref.read(playServiceProvider).continuePlay(
             _sessionId!,
             optionId: optionId,
             customDirection: custom,
+            skillName: skillName,
+            plotChoiceId: plotChoiceId,
           );
       setState(() {
-        _chapters.add(chapter);
+        _chapters.add(r.chapter);
+        _mode = r.mode;
+        _combatInfo = r.combatInfo;
+        _skills = r.skills;
+        _plotPoint = r.plotPoint;
         _loading = false;
         _customCtrl.clear();
       });
@@ -157,6 +183,159 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               _continue(custom: text);
             },
             child: const Text('Viết tiếp'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Danh sách nút thắt cốt truyện (khi chơi tới nút thắt) - bắt buộc chọn
+  List<Widget> _buildPlotChoices(ThemeData theme) {
+    final pp = _plotPoint!;
+    final widgets = <Widget>[];
+    if (pp.description != null && pp.description!.isNotEmpty) {
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Text(pp.description!,
+            style: const TextStyle(fontStyle: FontStyle.italic)),
+      ));
+    }
+    if (pp.choices.isEmpty) {
+      widgets.add(const Text(
+          'Nút thắt này chưa có lựa chọn. Hãy tự viết hướng đi.',
+          style: TextStyle(color: Colors.grey)));
+      widgets.add(TextButton.icon(
+        onPressed: _openCustomDialog,
+        icon: const Icon(Icons.edit_outlined, size: 18),
+        label: const Text('Tự viết hướng đi'),
+      ));
+      return widgets;
+    }
+    widgets.addAll(pp.choices.asMap().entries.map((e) {
+      final idx = e.key;
+      final c = e.value;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: OutlinedButton(
+          onPressed: () => _continue(plotChoiceId: c.id),
+          style: OutlinedButton.styleFrom(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            side: BorderSide(color: Colors.deepPurple.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('${idx + 1}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.deepPurple,
+                    )),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(c.label)),
+            ],
+          ),
+        ),
+      );
+    }));
+    return widgets;
+  }
+
+  // Danh sách nút chiêu thức khi chiến đấu (kèm nút xem mô tả)
+  List<Widget> _buildSkillButtons(ThemeData theme) {
+    if (_skills.isEmpty) {
+      return [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'Nhân vật chưa có chiêu thức nào. Hãy tự viết hành động.',
+            style: TextStyle(color: theme.textTheme.bodySmall?.color),
+          ),
+        ),
+        TextButton.icon(
+          onPressed: _openCustomDialog,
+          icon: const Icon(Icons.edit_outlined, size: 18),
+          label: const Text('Tự viết hành động'),
+        ),
+      ];
+    }
+    return _skills.map((skill) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: OutlinedButton(
+          onPressed: () => _continue(skillName: skill.name),
+          style: OutlinedButton.styleFrom(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.flash_on, size: 18, color: Colors.redAccent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(skill.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    if (skill.description != null &&
+                        skill.description!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          skill.description!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (skill.description != null && skill.description!.isNotEmpty)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  tooltip: 'Xem mô tả',
+                  onPressed: () => _showSkillInfo(skill),
+                ),
+            ],
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  void _showSkillInfo(Skill skill) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(skill.name),
+        content: Text(skill.description ?? 'Không có mô tả.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Đóng'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _continue(skillName: skill.name);
+            },
+            child: const Text('Dùng chiêu này'),
           ),
         ],
       ),
@@ -474,13 +653,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.alt_route,
-                              size: 18, color: theme.colorScheme.primary),
+                          Icon(
+                              _atPlotPoint
+                                  ? Icons.flag
+                                  : (_isCombat
+                                      ? Icons.sports_martial_arts
+                                      : Icons.alt_route),
+                              size: 18,
+                              color: _atPlotPoint
+                                  ? Colors.deepPurple
+                                  : (_isCombat
+                                      ? Colors.redAccent
+                                      : theme.colorScheme.primary)),
                           const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text('Bạn sẽ làm gì tiếp theo?',
+                          Expanded(
+                            child: Text(
+                                _atPlotPoint
+                                    ? 'Nút thắt: ${_plotPoint!.title}'
+                                    : (_isCombat
+                                        ? 'Giao tranh! Chọn chiêu thức'
+                                        : 'Bạn sẽ làm gì tiếp theo?'),
                                 style:
-                                    TextStyle(fontWeight: FontWeight.w700)),
+                                    const TextStyle(fontWeight: FontWeight.w700)),
                           ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
@@ -496,48 +690,82 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       ),
                       if (_optionsExpanded) ...[
                         const SizedBox(height: 6),
-                        ...lastChapter.options.asMap().entries.map((e) {
-                          final idx = e.key;
-                          final opt = e.value;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: OutlinedButton(
-                              onPressed: () => _continue(optionId: opt.id),
-                              style: OutlinedButton.styleFrom(
-                                alignment: Alignment.centerLeft,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 14),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary
-                                          .withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text('${idx + 1}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: theme.colorScheme.primary,
-                                        )),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(child: Text(opt.label)),
-                                ],
-                              ),
+                        // Gợi ý đòn phản công của địch (nếu đang chiến đấu)
+                        if (_isCombat && !_atPlotPoint && _combatInfo.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color:
+                                      Colors.redAccent.withValues(alpha: 0.3)),
                             ),
-                          );
-                        }),
-                        TextButton.icon(
-                          onPressed: _openCustomDialog,
-                          icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: const Text('Tự viết hướng đi khác'),
-                        ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded,
+                                    size: 18, color: Colors.redAccent),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(_combatInfo,
+                                      style: const TextStyle(
+                                          fontStyle: FontStyle.italic)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        // Ưu tiên: NÚT THẮT -> hiển thị lựa chọn của tác giả (bắt buộc chọn)
+                        if (_atPlotPoint)
+                          ..._buildPlotChoices(theme)
+                        // CHIẾN ĐẤU: hiển thị kho chiêu thức
+                        else if (_isCombat)
+                          ..._buildSkillButtons(theme)
+                        // THƯỜNG: hiển thị các hướng đi
+                        else ...[
+                          ...lastChapter.options.asMap().entries.map((e) {
+                            final idx = e.key;
+                            final opt = e.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: OutlinedButton(
+                                onPressed: () => _continue(optionId: opt.id),
+                                style: OutlinedButton.styleFrom(
+                                  alignment: Alignment.centerLeft,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 14),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text('${idx + 1}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: theme.colorScheme.primary,
+                                          )),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: Text(opt.label)),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                          TextButton.icon(
+                            onPressed: _openCustomDialog,
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            label: const Text('Tự viết hướng đi khác'),
+                          ),
+                        ],
                       ],
                     ],
                   ),
