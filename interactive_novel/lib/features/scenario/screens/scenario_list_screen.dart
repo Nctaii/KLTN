@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:interactive_novel/features/play/screen/play_screen.dart';
 import '../providers/scenario_provider.dart';
 import 'create_scenario_screen.dart';
-import '../../play/providers/play_provider.dart';
 import '../widgets/scenario_card.dart';
 import 'scenario_detail_screen.dart';
 

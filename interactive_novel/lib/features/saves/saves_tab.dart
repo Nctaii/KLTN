@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:interactive_novel/features/play/screen/play_screen.dart';
 import '../play/providers/play_provider.dart';
+import '../play/screen/shared_playthroughs_screen.dart';
 import '../scenario/providers/scenario_provider.dart';
 import '../scenario/screens/edit_scenario_screen.dart';
 
@@ -51,6 +52,54 @@ class SavesTab extends ConsumerWidget {
     }
   }
 
+  // Xuất bản / cập nhật / gỡ một lượt chơi
+  Future<void> _publishSession(BuildContext context, WidgetRef ref,
+      String sessionId, String storyTitle) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.public),
+              title: const Text('Xuất bản / Cập nhật'),
+              subtitle: const Text(
+                  'Chia sẻ lượt chơi này để người khác đọc. Bấm lại để cập nhật nội dung mới.'),
+              onTap: () => Navigator.pop(ctx, 'publish'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.public_off),
+              title: const Text('Gỡ chia sẻ'),
+              onTap: () => Navigator.pop(ctx, 'unpublish'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null) return;
+    try {
+      final published = await ref
+          .read(playServiceProvider)
+          .setPublish(sessionId, action == 'publish');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(published
+                ? 'Đã xuất bản/cập nhật lượt chơi'
+                : 'Đã gỡ chia sẻ'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(mySessionsProvider);
@@ -67,6 +116,33 @@ class SavesTab extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            // Khám phá lượt chơi được chia sẻ
+            Material(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const SharedPlaythroughsScreen(),
+                )),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Icon(Icons.auto_stories, color: theme.colorScheme.primary),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text('Khám phá lượt chơi chia sẻ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 15)),
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             _sectionHeader(theme, Icons.history, 'Đang chơi dở'),
             const SizedBox(height: 12),
             sessionsAsync.when(
@@ -135,6 +211,12 @@ class SavesTab extends ConsumerWidget {
                                                   .textTheme.bodySmall?.color)),
                                     ],
                                   ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.ios_share, size: 20),
+                                  tooltip: 'Chia sẻ lượt chơi',
+                                  onPressed: () => _publishSession(
+                                      context, ref, s.sessionId, s.storyTitle),
                                 ),
                                 Container(
                                   width: 34,

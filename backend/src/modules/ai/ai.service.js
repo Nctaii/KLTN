@@ -96,6 +96,12 @@ function buildStyleGuide(scenario) {
     return `VĂN PHONG TIÊN HIỆP:
 - Dùng từ thuần Việt hoặc Hán Việt, TUYỆT ĐỐI KHÔNG chêm tiếng Anh hay phiên âm pinyin. Ví dụ: viết "đan điền" (KHÔNG viết "dantian"), "linh khí" (KHÔNG viết "qi"), "áo vải" (KHÔNG viết "linen").
 - Giọng văn cổ phong, trang trọng, giàu hình ảnh tu tiên: cảnh giới, linh khí, kiếm ý, đạo tâm.
+- ĐẠI TỪ NGƯỜI KỂ CHUYỆN gọi nhân vật (phải NHẤT QUÁN suốt truyện, không đổi qua lại):
+  + Nhân vật chính là NAM: người kể gọi là "hắn" (mặc định cho tiên hiệp/kiếm hiệp). KHÔNG dùng "chàng" cho nhân vật chính nam trừ khi đang trong cảnh tình cảm/lãng mạn rõ rệt và truyện đã phát triển tuyến tình cảm. KHÔNG dùng "cậu", "anh ấy".
+  + Nhân vật chính là NỮ: người kể gọi là "nàng" hoặc "cô". KHÔNG dùng "cô ấy" theo lối hiện đại.
+  + Nhân vật phụ lớn tuổi/bậc trên: "ông", "lão", "vị", "bà".
+  + Nhân vật phụ trẻ: "hắn"/"y" (nam), "nàng"/"cô" (nữ), hoặc gọi thẳng tên.
+  + QUY TẮC NHẤT QUÁN: một khi đã chọn đại từ cho một nhân vật, phải giữ nguyên đại từ đó xuyên suốt, KHÔNG đổi "hắn" thành "chàng" rồi lại "hắn" trong cùng mạch truyện. "Chàng"/"nàng" chỉ dùng thay thế khi giọng văn cố ý trữ tình ở cảnh tình cảm.
 - QUY TẮC XƯNG HÔ (CỰC KỲ QUAN TRỌNG — sai xưng hô là lỗi nghiêm trọng nhất). KHÔNG BAO GIỜ dùng "tôi", "cậu", "bạn", "anh ấy", "cô ấy" trong lời thoại. Tuân thủ chính xác theo từng quan hệ:
   • Nói với SƯ PHỤ / TRƯỞNG BỐI / bậc cha chú: tự xưng "đệ tử" hoặc "con"; gọi đối phương "sư phụ", "sư tôn", "tiền bối".
   • Nói với SƯ HUYNH / SƯ TỶ (đồng môn vai trên, cùng thế hệ): tự xưng "đệ" hoặc "muội"; gọi đối phương "sư huynh", "sư tỷ". ⚠ TUYỆT ĐỐI KHÔNG xưng "con" và KHÔNG gọi "cậu" với sư huynh/sư tỷ.
@@ -111,17 +117,19 @@ function buildStyleGuide(scenario) {
   + Nếu không chắc một từ có đúng và hợp cổ phong hay không, hãy chọn một từ đơn giản, phổ thông, chắc chắn đúng thay vì một từ hoa mỹ nhưng có thể sai.
   + Trước khi kết thúc, hãy đọc lại nội dung một lượt: bảo đảm không có từ sai chính tả, không có từ vô nghĩa, không có đại từ hiện đại trong lời thoại.
 
-VÍ DỤ VĂN PHONG MẪU (hãy viết theo đúng giọng văn, nhịp câu, cách dùng từ và lối xưng hô như các đoạn dưới đây):
+VÍ DỤ VĂN PHONG MẪU (hãy viết theo đúng giọng văn, nhịp câu, cách dùng từ và lối xưng hô như các đoạn dưới đây. Văn phải TRONG SÁNG, DỄ HIỂU, câu không rườm rà tối nghĩa):
 
-[Tả cảnh, mở đầu]: "Trăng treo lưng chừng núi Thanh Vân, rọi xuống biển mây bạc cuồn cuộn. Lăng Thiên ngồi xếp bằng trên phiến đá lạnh, từ từ vận chuyển linh khí theo chu thiên. Đan điền hắn nóng ran, từng luồng chân khí mảnh như tơ bạc len lỏi qua kinh mạch, chậm rãi ngưng tụ. Một hơi thở, một niệm tịnh — thiên địa linh khí quanh thân khẽ rung động, như có như không. Gió núi lùa qua tán tùng, mang theo hơi sương lạnh buốt, nhưng hắn chẳng mảy may để tâm."
+[Tả cảnh thiên nhiên]: "Bình minh vừa ló, sương sớm còn giăng kín đỉnh Thanh Vân. Lăng Vân đứng trên vách đá, phóng tầm mắt nhìn biển mây cuộn dưới chân. Gió sớm mang theo hơi lạnh, thổi tung tà áo xanh bạc màu của hắn. Xa xa, tiếng chuông sớm từ đại điện vọng lại, ngân nga giữa núi rừng tĩnh mịch. Hắn hít một hơi sâu, linh khí trong trẻo tràn vào lồng ngực, tâm cũng theo đó mà lắng xuống."
 
-[Hội thoại giữa sư phụ và đệ tử]: "Lão giả áo xanh vuốt chòm râu bạc, ánh mắt sâu thẳm nhìn về phía xa. 'Tu tiên một đường, nghịch thiên mà hành,' ông trầm giọng. 'Ngươi có tư chất, nhưng tâm còn nông nổi. Nhớ kỹ, sai một niệm là vạn kiếp bất phục. Ngươi đã sẵn lòng chưa?' Lăng Thiên chắp tay cúi đầu, giọng cung kính: 'Đệ tử nguyện đi tới cùng, dẫu trước mặt là núi đao biển lửa. Xin sư phụ chỉ giáo.' Lão nhân khẽ gật, trong mắt thoáng một tia tán thưởng."
+[Tu luyện]: "Lăng Vân ngồi xếp bằng, hai tay kết ấn, chậm rãi dẫn linh khí đi theo chu thiên. Chân khí như dòng suối nhỏ, men theo kinh mạch chảy về đan điền, từng vòng từng vòng ngưng tụ. Hắn cảm nhận rõ một luồng ấm áp lan tỏa khắp tứ chi. Tu luyện không thể nóng vội — hắn hiểu rõ điều đó. Mỗi ngày tích lũy một chút, như nước chảy đá mòn, rồi sẽ có ngày bứt phá."
 
-[Hội thoại với sư tỷ đồng môn - chú ý xưng "đệ"/"sư tỷ", KHÔNG xưng "con"]: "Tô Tịnh Nhi khẽ chau mày, đưa tay phủi lớp bụi trên vai Lăng Thiên. 'Sư đệ lại đi luyện kiếm tới khuya nữa rồi,' nàng dịu giọng, trong mắt thoáng vẻ lo lắng. 'Thân thể là gốc của đạo, đệ chớ ép mình quá sức.' Lăng Thiên cười khẽ, chắp tay: 'Đa tạ sư tỷ quan tâm. Đệ chỉ sợ tư chất kém cỏi, không theo kịp mọi người trong tông.' Tô Tịnh Nhi lắc đầu: 'Sư tỷ tin đệ. Cứ vững tâm mà tiến.'"
+[Hội thoại với sư phụ/trưởng bối]: "Lăng Thiên Tuyệt vuốt chòm râu bạc, ánh mắt thâm trầm nhìn hắn. 'Con đường tu tiên gian nan hiểm trở, một bước sai có thể vạn kiếp bất phục,' lão chậm rãi nói. 'Con có hối hận khi chọn con đường này không?' Lăng Vân chắp tay, cúi đầu cung kính: 'Đệ tử không hối hận. Dù trước mặt là núi đao biển lửa, đệ tử cũng quyết đi tới cùng.' Lão nhân khẽ gật đầu, trong mắt thoáng vẻ hài lòng."
 
-[Hành động, chiến đấu]: "Kiếm quang lóe lên như một đạo bạch hồng xé toạc màn đêm. Lăng Thiên thân hình lảo đảo, miệng ứa máu tươi, song ánh mắt vẫn sắc như kiếm. Đối diện hắn, ma tu áo đen cười lạnh: 'Tu vi Luyện Khí mà dám đối đầu Trúc Cơ, ngươi không sợ chết sao?' Lăng Thiên lau vệt máu bên khóe miệng, chân khí trong đan điền chợt bùng lên dữ dội. 'Sống chết có số,' hắn quát khẽ, 'nhưng hôm nay, ngươi đừng hòng rời khỏi nơi này!' Dứt lời, trường kiếm trong tay ngưng tụ kiếm ý, đâm thẳng tới trước."
+[Hội thoại với sư huynh/sư tỷ - xưng "đệ"/"sư tỷ", KHÔNG xưng "con"]: "Tô Tịnh Nhi bước tới, khẽ phủi lớp bụi trên vai hắn. 'Sư đệ lại luyện công thâu đêm rồi,' nàng dịu giọng, ánh mắt lo lắng. 'Thân thể là gốc rễ của đạo, đệ đừng ép mình quá.' Lăng Vân mỉm cười: 'Đa tạ sư tỷ quan tâm. Đệ chỉ sợ tư chất kém cỏi, theo không kịp mọi người.' Tô Tịnh Nhi lắc đầu: 'Sư tỷ tin đệ. Cứ kiên trì, ắt có ngày thành tựu.'"
 
-[Nội tâm, cảm xúc]: "Đứng trước mộ phần sư phụ, Lăng Thiên lặng người hồi lâu. Năm xưa lão nhân nhặt hắn về từ khe núi, dạy hắn từng đường kiếm, từng câu khẩu quyết, mà nay chỉ còn nấm đất lạnh phủ rêu xanh. Lòng hắn quặn thắt, nhưng hắn không khóc. Người tu tiên không được để tâm ma trỗi dậy. Hắn quỳ xuống, dập đầu ba cái, thầm khắc cốt ghi tâm: mối thù này, kiếp này tất báo."`;
+[Chiến đấu]: "Kiếm quang lóe lên, xé toạc màn đêm như một đạo bạch hồng. Lăng Vân vung kiếm, chân khí dồn vào lưỡi thép, đâm thẳng tới trước. Đối thủ áo đen cười lạnh, vung tay phách ra một đạo hắc khí chống đỡ. Hai luồng lực va chạm, tiếng nổ vang dội, đá vụn bắn tung tóe. Lăng Vân lùi lại ba bước, khóe miệng rỉ máu, nhưng ánh mắt vẫn kiên định. 'Chỉ bấy nhiêu thôi sao?' hắn quát khẽ, nâng kiếm xông lên lần nữa."
+
+[Nội tâm, cảm xúc]: "Đứng trước mộ phần sư phụ, Lăng Vân lặng người hồi lâu. Năm xưa lão nhân nhặt hắn về từ khe núi, dạy hắn từng đường kiếm, từng câu khẩu quyết. Giờ đây chỉ còn lại nấm đất lạnh lẽo phủ rêu xanh. Lòng hắn quặn thắt, nhưng hắn không cho phép mình gục ngã. Người tu tiên phải giữ vững đạo tâm. Hắn quỳ xuống, dập đầu ba cái, thầm khắc ghi: mối thù này, kiếp này nhất định phải báo."`;
   }
   if (isFantasy) {
     return `VĂN PHONG FANTASY:
@@ -181,14 +189,12 @@ CƠ CHẾ NÚT THẮT CỐT TRUYỆN (quan trọng):
 - Nếu CHƯA tới thời điểm hợp lý, cứ tiếp tục dẫn truyện bình thường với "at_plot_point":false và đưa ra options như thường lệ.`
     : '';
 
-  const systemPrompt = `Bạn là người kể chuyện cho tiểu thuyết tương tác nhập vai, viết bằng tiếng Việt, văn phong cuốn hút, trôi chảy, hợp ngữ cảnh và không bị lủng củng.
+  // PHẦN CỐ ĐỊNH cho cả phiên chơi (không đổi giữa các chương) -> được cache
+  const systemStatic = `Bạn là người kể chuyện cho tiểu thuyết tương tác nhập vai, viết bằng tiếng Việt, văn phong cuốn hút, trôi chảy, hợp ngữ cảnh và không bị lủng củng.
 Mỗi chương khoảng ${CHAPTER_WORDS} từ. Nhân vật chính tên "${mcName}", người đọc nhập vai vào nhân vật này.
 
 ${styleGuide}
-${personalityGuide}
-${skillGuide}
 ${combatGuide}
-${plotGuide}
 
 QUY TẮC VẬT PHẨM: Khi một vật phẩm quan trọng xuất hiện lần đầu, giải thích tác dụng ngay sau dấu gạch ngang. Ví dụ: "Tụ Linh Đan - đan dược giúp hồi phục linh lực nhanh chóng" hoặc "Kiếm Hàn Băng - thanh kiếm tỏa hàn khí, chém đứt mọi giáp trụ".
 LƯU Ý CUỐI: trước khi xuất kết quả, hãy tự rà soát nội dung chương để đảm bảo: (1) không sai chính tả, không có từ vô nghĩa; (2) xưng hô đúng vai vế trong mọi lời thoại; (3) không lẫn từ hiện đại. Sửa hết lỗi rồi mới xuất JSON.
@@ -198,9 +204,12 @@ ${worldContext}
 
 Chỉ trả về JSON đúng cấu trúc, không thêm lời dẫn:
 {"content":"<nội dung chương>","options":["<hướng đi 1>","<hướng đi 2>"],"summary":"<tóm tắt tích lũy cập nhật>","mode":"normal hoặc combat","combat_info":"<gợi ý đòn địch nếu đang combat, nếu không thì để rỗng>","learned_skill":{"name":"<tên chiêu mới hoặc bỏ trống>","description":"<mô tả ngắn 10-20 từ>"},"at_plot_point":false}
-- options: khi "mode":"normal" và "at_plot_point":false, BẮT BUỘC có ĐÚNG 2 đến 4 hướng đi, mỗi hướng đi là một câu ngắn gọn (KHÔNG dùng dấu phẩy bên trong mỗi hướng đi). Khi "mode":"combat" hoặc "at_plot_point":true, để options là mảng rỗng [].
+- options: khi "mode":"normal" và "at_plot_point":false, BẮT BUỘC PHẢI CÓ ĐÚNG 2 đến 4 hướng đi (KHÔNG ĐƯỢC để mảng rỗng), mỗi hướng đi là một câu ngắn gọn (KHÔNG dùng dấu phẩy bên trong mỗi hướng đi). Đây là yêu cầu BẮT BUỘC: mọi chương thường đều phải kết thúc bằng các hướng đi cho người chơi chọn. Chỉ khi "mode":"combat" hoặc "at_plot_point":true thì mới để options là mảng rỗng [].
 - at_plot_point: chỉ đặt true khi câu chuyện vừa đến đúng nút thắt cốt truyện được nêu (nếu có); mặc định false.
 - summary: bản tóm tắt NGẮN GỌN (tối đa 200 từ) toàn bộ diễn biến truyện TÍNH ĐẾN HẾT chương vừa viết, gồm các tình tiết, nhân vật, vật phẩm, chiêu thức, mâu thuẫn quan trọng để giữ mạch truyện nhất quán. Cập nhật từ tóm tắt cũ (nếu có) bằng cách bổ sung diễn biến mới, không bỏ sót điều cũ quan trọng.`;
+
+  // PHẦN ĐỘNG đổi theo từng chương (tính cách, chiêu thức, nút thắt) -> KHÔNG cache
+  const systemDynamic = `${personalityGuide}${skillGuide}${plotGuide}`;
 
   const messages = [];
 
@@ -246,9 +255,30 @@ Chỉ trả về JSON đúng cấu trúc, không thêm lời dẫn:
     model: MODEL,
     max_tokens: maxTokens,
     temperature: 0.9,
-    system: systemPrompt,
+    // Prompt caching: phần cố định (style guide + few-shot + bối cảnh) được cache
+    // để các chương sau trong cùng phiên xử lý nhanh hơn và rẻ hơn.
+    system: [
+      {
+        type: 'text',
+        text: systemStatic,
+        cache_control: { type: 'ephemeral' },
+      },
+      {
+        type: 'text',
+        text: systemDynamic,
+      },
+    ],
     messages,
   });
+
+  // Log để kiểm tra cache có hoạt động không (có thể bỏ sau khi xác nhận)
+  if (response.usage) {
+    console.log('[cache]', {
+      create: response.usage.cache_creation_input_tokens || 0,
+      read: response.usage.cache_read_input_tokens || 0,
+      input: response.usage.input_tokens || 0,
+    });
+  }
 
   const raw = response.content.find((b) => b.type === 'text')?.text || '';
 
@@ -277,6 +307,9 @@ Chỉ trả về JSON đúng cấu trúc, không thêm lời dẫn:
 
   const outMode = parsed.mode === 'combat' ? 'combat' : 'normal';
   const atPlotPoint = parsed.at_plot_point === true || parsed.at_plot_point === 'true';
+
+  // Nếu chương thường mà AI quên sinh options, play.service sẽ gọi
+  // suggestOptionsForChapter để sinh options hợp ngữ cảnh (xử lý ở tầng đó).
 
   return {
     content: parsed.content || '',
@@ -512,4 +545,40 @@ Chỉ trả về JSON đúng cấu trúc, không thêm lời dẫn:
   return plotPoints;
 }
 
-module.exports = { generateChapter, buildWorldContext, suggestPlotChoices, suggestPlotPoints };
+// Sinh các hướng đi tiếp theo dựa trên nội dung một chương (dùng khi chương
+// chính bị thiếu options). Gọi nhẹ, trả về mảng chuỗi.
+async function suggestOptionsForChapter({ chapterContent, mcName }) {
+  if (MOCK_MODE) {
+    return ['Tiếp tục tiến lên', 'Quan sát xung quanh', 'Hành động khác'];
+  }
+  try {
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 300,
+      system: `Dựa trên đoạn truyện, hãy đề xuất 3 hướng đi tiếp theo mà nhân vật chính "${mcName}" có thể chọn. Mỗi hướng đi là một câu ngắn gọn, hợp với tình huống vừa diễn ra, KHÔNG dùng dấu phẩy bên trong mỗi hướng đi.
+Chỉ trả về JSON: {"options":["...","...","..."]}`,
+      messages: [
+        {
+          role: 'user',
+          content: `Đoạn truyện vừa diễn ra:\n${(chapterContent || '').slice(-1500)}\n\nĐề xuất 3 hướng đi tiếp theo.`,
+        },
+      ],
+    });
+    const text = response.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
+    let t = text.trim();
+    const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fence) t = fence[1].trim();
+    const brace = t.match(/\{[\s\S]*\}/);
+    if (brace) t = brace[0];
+    const obj = JSON.parse(t);
+    const opts = (obj.options || [])
+      .map((o) => (o || '').toString().trim())
+      .filter((o) => o.length > 0)
+      .slice(0, 4);
+    return opts;
+  } catch {
+    return [];
+  }
+}
+
+module.exports = { generateChapter, buildWorldContext, suggestPlotChoices, suggestPlotPoints, suggestOptionsForChapter };

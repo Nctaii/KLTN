@@ -580,8 +580,25 @@ class _EditScenarioScreenState extends ConsumerState<EditScenarioScreen> {
 
           // Nút thắt
           _sectionTitle('Nút thắt cốt truyện'),
-          const Text('Quản lý ở trang riêng (thêm/sửa/xóa/sắp xếp, AI sinh).',
-              style: TextStyle(fontSize: 12, color: Colors.grey)),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, size: 18, color: Colors.blue),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Thay đổi nút thắt chỉ áp dụng cho các lượt chơi mới. Người đang chơi dở vẫn giữ nguyên tiến trình.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _openPlotPoints,

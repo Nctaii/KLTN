@@ -18,6 +18,8 @@ class Chapter {
   final String? chosenDirection;
   final List<ChapterOption> options;
   final String mode;
+  final String? plotPointId; // nếu chương này là một nút thắt
+  final bool isCombatStart; // nếu chương này là đầu một trận chiến đấu
 
   Chapter({
     required this.id,
@@ -26,17 +28,23 @@ class Chapter {
     this.chosenDirection,
     required this.options,
     this.mode = 'normal',
+    this.plotPointId,
+    this.isCombatStart = false,
   });
+
+  bool get isPlotPoint => plotPointId != null;
 
   factory Chapter.fromJson(Map<String, dynamic> j) => Chapter(
         id: j['id'].toString(),
-        chapterNumber: j['chapter_number'] as int,
+        chapterNumber: (j['chapter_number'] as num).toInt(),
         content: j['content'] as String,
         chosenDirection: j['chosen_direction'] as String?,
         options: ((j['options'] as List?) ?? [])
             .map((o) => ChapterOption.fromJson(o as Map<String, dynamic>))
             .toList(),
         mode: (j['mode'] as String?) ?? 'normal',
+        plotPointId: j['plot_point_id']?.toString(),
+        isCombatStart: j['is_combat_start'] == true,
       );
 }
 
@@ -139,4 +147,75 @@ class PlaySessionSummary {
         mcName: j['mc_name'] as String?,
         chapterCount: int.tryParse(j['chapter_count'].toString()) ?? 0,
       );
+}
+
+// Một lượt chơi đã được chia sẻ công khai (mục danh sách)
+class PublishedSession {
+  final String sessionId;
+  final String title;
+  final String storyTitle;
+  final String? mcName;
+  final String? authorName;
+  final int chapterCount;
+  PublishedSession({
+    required this.sessionId,
+    required this.title,
+    required this.storyTitle,
+    this.mcName,
+    this.authorName,
+    required this.chapterCount,
+  });
+  factory PublishedSession.fromJson(Map<String, dynamic> j) => PublishedSession(
+        sessionId: j['session_id'].toString(),
+        title: (j['title'] ?? j['story_title'] ?? 'Lượt chơi').toString(),
+        storyTitle: (j['story_title'] ?? '').toString(),
+        mcName: j['mc_name'] as String?,
+        authorName: j['author_name'] as String?,
+        chapterCount: int.tryParse(j['chapter_count'].toString()) ?? 0,
+      );
+}
+
+// Một chương trong bản đọc công khai
+class PublishedChapter {
+  final int chapterNumber;
+  final String content;
+  final String? chosenDirection;
+  PublishedChapter({
+    required this.chapterNumber,
+    required this.content,
+    this.chosenDirection,
+  });
+  factory PublishedChapter.fromJson(Map<String, dynamic> j) => PublishedChapter(
+        chapterNumber: (j['chapter_number'] as num).toInt(),
+        content: (j['content'] ?? '').toString(),
+        chosenDirection: j['chosen_direction'] as String?,
+      );
+}
+
+// Toàn bộ bản đọc công khai (thông tin + các chương)
+class PublishedPlaythrough {
+  final String title;
+  final String storyTitle;
+  final String? mcName;
+  final String? authorName;
+  final List<PublishedChapter> chapters;
+  PublishedPlaythrough({
+    required this.title,
+    required this.storyTitle,
+    this.mcName,
+    this.authorName,
+    required this.chapters,
+  });
+  factory PublishedPlaythrough.fromJson(Map<String, dynamic> j) {
+    final info = (j['info'] ?? {}) as Map<String, dynamic>;
+    return PublishedPlaythrough(
+      title: (info['title'] ?? info['story_title'] ?? 'Lượt chơi').toString(),
+      storyTitle: (info['story_title'] ?? '').toString(),
+      mcName: info['mc_name'] as String?,
+      authorName: info['author_name'] as String?,
+      chapters: ((j['chapters'] as List?) ?? [])
+          .map((c) => PublishedChapter.fromJson(c as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }

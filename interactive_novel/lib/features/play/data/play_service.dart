@@ -63,6 +63,30 @@ class PlayService {
     );
   }
 
+  // Quay lại một nút thắt đã qua (xóa các chương sau). Trả về nút thắt để chọn lại.
+  Future<({int rewoundToChapter, PlotPointLive? plotPoint})> rewind(
+      String sessionId, String chapterId) async {
+    final res = await _dio.post('/play/$sessionId/rewind', data: {
+      'chapter_id': chapterId,
+    });
+    final data = _ok(res);
+    return (
+      rewoundToChapter: (data['rewound_to_chapter'] as num?)?.toInt() ?? 0,
+      plotPoint: data['plot_point'] != null
+          ? PlotPointLive.fromJson(data['plot_point'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  // Quay lại đầu một trận combat đã qua (xóa các chương sau để đánh lại)
+  Future<int> rewindCombat(String sessionId, String chapterId) async {
+    final res = await _dio.post('/play/$sessionId/rewind-combat', data: {
+      'chapter_id': chapterId,
+    });
+    final data = _ok(res);
+    return (data['rewound_to_chapter'] as num?)?.toInt() ?? 0;
+  }
+
   // Lấy danh sách lượt chơi của tôi
   Future<List<PlaySessionSummary>> listMySessions() async {
     final res = await _dio.get('/play');
@@ -91,5 +115,33 @@ class PlayService {
   Future<void> deleteByStory(String storyId) async {
     final res = await _dio.delete('/play/by-story/$storyId');
     _ok(res);
+  }
+
+  // Xuất bản / cập nhật / gỡ một lượt chơi
+  Future<bool> setPublish(String sessionId, bool publish,
+      {String? shareTitle}) async {
+    final res = await _dio.post('/play/$sessionId/publish', data: {
+      'publish': publish,
+      if (shareTitle != null) 'share_title': shareTitle,
+    });
+    final data = _ok(res);
+    return data['is_published'] == true;
+  }
+
+  // Danh sách lượt chơi công khai (chia sẻ)
+  Future<List<PublishedSession>> listPublished() async {
+    final res = await _dio.get('/play/published');
+    final data = _ok(res);
+    final list = (data['sessions'] as List?) ?? [];
+    return list
+        .map((e) => PublishedSession.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Đọc một lượt chơi công khai
+  Future<PublishedPlaythrough> getPublished(String sessionId) async {
+    final res = await _dio.get('/play/published/$sessionId');
+    final data = _ok(res);
+    return PublishedPlaythrough.fromJson(data);
   }
 }

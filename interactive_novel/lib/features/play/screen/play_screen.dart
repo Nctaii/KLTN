@@ -157,6 +157,113 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
   }
 
+  // Quay lại một nút thắt đã qua: cảnh báo rồi xóa các chương sau, cho chọn lại
+  Future<void> _rewindTo(Chapter chapter) async {
+    final laterCount = _chapters
+        .where((c) => c.chapterNumber > chapter.chapterNumber)
+        .length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Quay lại nút thắt?'),
+        content: Text(
+          'Bạn sẽ quay lại nút thắt ở chương ${chapter.chapterNumber} để chọn lại hướng đi.\n\n'
+          '$laterCount chương sau đó sẽ bị xóa và không thể khôi phục. Tiếp tục?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Xóa & chọn lại'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _loading = true);
+    try {
+      final r =
+          await ref.read(playServiceProvider).rewind(_sessionId!, chapter.id);
+      setState(() {
+        // Giữ lại các chương tới chương nút thắt, bỏ phần sau
+        _chapters.removeWhere(
+            (c) => c.chapterNumber > chapter.chapterNumber);
+        _mode = 'normal';
+        _combatInfo = '';
+        _plotPoint = r.plotPoint;
+        _loading = false;
+      });
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (_chapters.isNotEmpty) {
+        _pageController.jumpToPage(_chapters.length - 1);
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi quay lại: $e')),
+        );
+      }
+    }
+  }
+
+  // Quay lại đầu một trận combat: cảnh báo rồi xóa các chương sau để đánh lại
+  Future<void> _rewindCombat(Chapter chapter) async {
+    final laterCount = _chapters
+        .where((c) => c.chapterNumber > chapter.chapterNumber)
+        .length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Đánh lại trận này?'),
+        content: Text(
+          'Bạn sẽ quay lại đầu trận chiến đấu ở chương ${chapter.chapterNumber} để đánh lại với chiêu thức khác.\n\n'
+          '$laterCount chương sau đó sẽ bị xóa và không thể khôi phục. Tiếp tục?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Xóa & đánh lại'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _loading = true);
+    try {
+      await ref.read(playServiceProvider).rewindCombat(_sessionId!, chapter.id);
+      setState(() {
+        _chapters.removeWhere((c) => c.chapterNumber > chapter.chapterNumber);
+        _mode = 'combat'; // trở lại chế độ chiến đấu để chọn chiêu
+        _combatInfo = '';
+        _plotPoint = null;
+        _loading = false;
+      });
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (_chapters.isNotEmpty) {
+        _pageController.jumpToPage(_chapters.length - 1);
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi quay lại: $e')),
+        );
+      }
+    }
+  }
+
   void _openCustomDialog() {
     showDialog(
       context: context,
@@ -546,6 +653,76 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                                 color: theme.colorScheme.primary,
                               )),
                         ),
+                        if (ch.isPlotPoint) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.flag,
+                                    size: 12, color: Colors.deepPurple),
+                                SizedBox(width: 4),
+                                Text('NÚT THẮT',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.deepPurple,
+                                    )),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () => _rewindTo(ch),
+                            icon: const Icon(Icons.replay, size: 16),
+                            label: const Text('Chọn lại'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.deepPurple,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ],
+                        if (ch.isCombatStart && !ch.isPlotPoint) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.sports_martial_arts,
+                                    size: 12, color: Colors.redAccent),
+                                SizedBox(width: 4),
+                                Text('TRẬN ĐẤU',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.redAccent,
+                                    )),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () => _rewindCombat(ch),
+                            icon: const Icon(Icons.replay, size: 16),
+                            label: const Text('Đánh lại'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.redAccent,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     if (ch.chosenDirection != null) ...[
